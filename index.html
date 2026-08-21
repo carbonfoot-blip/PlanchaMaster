@@ -294,16 +294,6 @@
             background: #be123c;
         }
 
-        .reset-btn {
-            background: #64748b;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-        }
-
         .image-edit-box {
             background: #f1f5f9;
             padding: 12px;
@@ -356,7 +346,6 @@
         </div>
         <div class="action-btn-group">
             <button class="unselect-btn" onclick="clearWeeklySelections()">🧹 Désélectionner les repas de la semaine</button>
-            <button class="reset-btn" onclick="resetToDefault30()">🔄 Réinitialiser les recettes par défaut</button>
         </div>
     </div>
 
@@ -474,79 +463,6 @@
 </div>
 
 <script>
-const defaultMeals30 = [
-    {
-        id: 1,
-        title: "Tacos al Pastor",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["1/2 ananas frais", "1 oignon rouge", "Coriandre fraîche", "3 limes"],
-            "Viandes": ["600g porc (échine) mince"],
-            "NonPérissables": ["12 tortillas de maïs", "Épices achiote / chili"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Faire griller le porc mariné sur zone très chaude. Griller les tranches d'ananas jusqu'à caramélisation. Réchauffer les tortillas sur la plancha. Assembler avec coriandre et lime."
-    },
-    {
-        id: 2,
-        title: "Tacos au Poulet Lime & Coriandre",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["2 limes", "1 bouquet de coriandre", "1 oignon blanc"],
-            "Viandes": ["600g poitrines de poulet"],
-            "NonPérissables": ["10 tortillas de maïs", "Poudre d'ail", "Cumin"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Émincer le poulet et le mariner dans lime, coriandre, huile et cumin. Saisir sur plancha chaude pendant 6-8 min. Servir sur tortillas chaudes."
-    },
-    {
-        id: 3,
-        title: "Tacos Carnitas Croustillants",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["1 oignon", "Coriandre", "2 limes"],
-            "Viandes": ["600g épaule de porc cuite effilochée"],
-            "NonPérissables": ["Tortillas de maïs", "Sauce salsa verde"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Déposer le porc effiloché sur la plancha bien chaude avec un filet d'huile. Laisser dorer et devenir croustillant sans trop remuer. Servir garni d'oignons et lime."
-    },
-    {
-        id: 4,
-        title: "Smash Burgers Double Cheese",
-        category: "Burgers & Sandwichs",
-        img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["1 oignon jaune", "Laitue", "Tomate"],
-            "Viandes": ["600g bœuf haché 80/20"],
-            "NonPérissables": ["4 pains briochés", "Sauce burger", "Cornichons"],
-            "ProduitsLaitiers": ["8 tranches de fromage Cheddar", "Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Écraser très fermement les boules de bœuf sur plancha très chaude. Ajouter oignons très minces sous la viande. Poser le fromage, empiler et toaster les pains."
-    },
-    {
-        id: 5,
-        title: "Bavette Chimichurri & Asperges",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Persil frais", "Ail", "1 botte d'asperges"],
-            "Viandes": ["600g bavette de bœuf"],
-            "NonPérissables": ["Huile d'olive", "Vinaigre de vin rouge"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Saisir la bavette 3-4 min par côté à feu vif. Cuire les asperges en parallèle avec huile d'olive et fleur de sel. Servir avec sauce chimichurri fraîche."
-    }
-];
-
 let meals = [];
 let selectedMealIds = [];
 let currentOpenMealId = null;
@@ -565,13 +481,7 @@ async function loadDatabase() {
             }
         });
         const data = await res.json();
-        
-        if (Array.isArray(data) && data.length === 0) {
-            meals = [...defaultMeals30];
-            await saveDatabase();
-        } else {
-            meals = Array.isArray(data) ? data : (data.record || defaultMeals30);
-        }
+        meals = Array.isArray(data) ? data : (data.record || []);
         document.getElementById('backend-badge').className = "backend-status status-online";
         document.getElementById('backend-badge').innerText = "🌐 Mode : BD Partagée en Ligne";
     } catch (e) {
@@ -587,8 +497,6 @@ function loadLocal() {
     const saved = localStorage.getItem('plancha_meals_db_v30');
     if (saved) {
         meals = JSON.parse(saved);
-    } else {
-        meals = [...defaultMeals30];
     }
 }
 
@@ -606,14 +514,6 @@ async function saveDatabase() {
         });
     } catch (e) {
         console.error("Erreur lors de la sauvegarde cloud:", e);
-    }
-}
-
-function resetToDefault30() {
-    if (confirm("Voulez-vous réinitialiser le catalogue avec les recettes par défaut ?")) {
-        meals = [...defaultMeals30];
-        saveDatabase();
-        renderCatalog();
     }
 }
 
