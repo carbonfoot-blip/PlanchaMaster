@@ -169,6 +169,17 @@
             background: var(--primary-hover);
         }
 
+        .btn-action {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
         /* Modal / Detail */
         .modal {
             display: none;
@@ -244,6 +255,33 @@
             margin-top: 10px;
         }
 
+        .image-edit-box {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .image-edit-box input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .backend-status {
+            font-size: 0.85em;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .status-local { background: #e2e8f0; color: #475569; }
+        .status-online { background: #dcfce7; color: #15803d; }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -253,6 +291,7 @@
     <header>
         <h1>🔥 Plancha Master</h1>
         <p>Générez votre menu de 5 repas et votre liste d'épicerie sur mesure</p>
+        <div id="backend-badge" class="backend-status status-local">🌐 Mode : Stockage Local (Non partagé)</div>
     </header>
 
     <div class="tabs">
@@ -260,6 +299,7 @@
         <button class="tab-btn" onclick="switchTab('menu', event)">2. Menu de la semaine</button>
         <button class="tab-btn" onclick="switchTab('grocery', event)">3. Liste d'épicerie</button>
         <button class="tab-btn" onclick="switchTab('add', event)">➕ Ajouter une recette</button>
+        <button class="tab-btn" onclick="switchTab('config', event)">⚙️ Configuration BD</button>
     </div>
 
     <div id="counter" class="counter">
@@ -290,7 +330,7 @@
     <div id="tab-add" class="hidden">
         <div class="form-container">
             <h2>Ajouter une nouvelle recette Plancha</h2>
-            <p>Saisissez le lien Web de la recette ou remplissez le formulaire pour la reformatting et l'intégrer au catalogue.</p>
+            <p>Saisissez le lien Web de la recette ou remplissez le formulaire pour l'intégrer au catalogue partagé ou local.</p>
             
             <form id="add-recipe-form" onsubmit="saveNewRecipe(event)">
                 <div class="form-group">
@@ -354,8 +394,30 @@
                     <textarea id="input-instructions" rows="4" required placeholder="Étapes de préparation et temps de cuisson sur la plancha..."></textarea>
                 </div>
 
-                <button type="submit" class="btn-submit">💾 Enregistrer la recette dans la base de données</button>
+                <button type="submit" class="btn-submit">💾 Enregistrer la recette</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Configuration BD dynamique -->
+    <div id="tab-config" class="hidden">
+        <div class="form-container">
+            <h2>⚙️ Base de Données Partagée (Firebase / JSONBin)</h2>
+            <p>Pour synchroniser les recettes entre plusieurs personnes (en ligne), entrez vos identifiants d'API gratuits ci-dessous (ex: JSONBin.io ou Firebase Rest API).</p>
+            
+            <div class="form-group">
+                <label>URL du serveur / Bin ID (JSONBin ou Firebase) :</label>
+                <input type="text" id="config-api-url" placeholder="https://api.jsonbin.io/v3/b/VOTRE_BIN_ID ou URL Firebase">
+            </div>
+
+            <div class="form-group">
+                <label>Clé d'API / Secret Key (Master Key) :</label>
+                <input type="password" id="config-api-key" placeholder="$2a$10$...">
+            </div>
+
+            <button class="btn-action" onclick="saveApiConfig()" style="width:100%;">💾 Activer la synchronisation partagée</button>
+            <br><br>
+            <button class="reset-btn" onclick="disableApiConfig()" style="width:100%;">Désactiver et revenir au mode Local</button>
         </div>
     </div>
 </div>
@@ -365,7 +427,14 @@
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal()">&times;</button>
         <h2 id="modal-title"></h2>
-        <img id="modal-img" style="width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:15px;" src="" alt="">
+        <img id="modal-img" style="width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:10px;" src="" alt="">
+        
+        <!-- Modification d'image -->
+        <div class="image-edit-box">
+            <input type="url" id="edit-img-url" placeholder="Nouvelle URL de l'image (https://...)">
+            <button class="btn-action" onclick="updateRecipeImage()">🖼️ Changer l'image</button>
+        </div>
+
         <p id="modal-link-container"></p>
         <h3>Ingrédients</h3>
         <ul id="modal-ingredients"></ul>
@@ -420,62 +489,6 @@ const defaultMeals30 = [
     },
     {
         id: 4,
-        title: "Tacos de Poisson Grillé",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1512838243191-e81e8f66f1fd?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["1/4 chou rouge émincé", "Lime", "Avocat"],
-            "Viandes": ["500g filet de poisson blanc (aiglefin/cabillaud)"],
-            "NonPérissables": ["Tortillas de blé", "Mayo au chipotle"],
-            "ProduitsLaitiers": ["Crème sure"],
-            "Surgelés": []
-        },
-        instructions: "Assaisonner le poisson d'épices cajun. Saisir 2-3 min par côté sur plancha huilée. Émietter grossièrement et dresser sur tortillas avec chou croquant et sauce."
-    },
-    {
-        id: 5,
-        title: "Fajitas au Poulet et Poivrons",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1534352956036-cd2d588814d4?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["3 poivrons de couleurs", "2 oignons jaunes"],
-            "Viandes": ["600g poitrines de poulet"],
-            "NonPérissables": ["Tortillas de blé", "Assaisonnement à fajitas"],
-            "ProduitsLaitiers": ["Crème sure", "Fromage râpé"],
-            "Surgelés": []
-        },
-        instructions: "Griller lanières de poulet, poivrons et oignons émincés côte à côte sur la plancha. Mélanger avec les épices en fin de cuisson. Chauffer les tortillas à côté."
-    },
-    {
-        id: 6,
-        title: "Fajitas de Bavette de Bœuf",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["2 poivrons", "1 oignon rouge", "Coriandre"],
-            "Viandes": ["600g bavette de bœuf"],
-            "NonPérissables": ["Tortillas de blé", "Sauce salsa"],
-            "ProduitsLaitiers": ["Crème sure"],
-            "Surgelés": []
-        },
-        instructions: "Saisir la bavette 3 min de chaque côté. Faire sauter les poivrons/oignons sur zone adjacente. Trancher le bœuf contre le grain et mélanger avec les légumes."
-    },
-    {
-        id: 7,
-        title: "Quesadillas Poulet & Jalapeños",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["1 piment jalapeño", "Coriandre"],
-            "Viandes": ["400g poulet cuit émincé"],
-            "NonPérissables": ["8 grandes tortillas de blé"],
-            "ProduitsLaitiers": ["250g fromage Monterey Jack / Cheddar râpé", "Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Beurrer les tortillas. Garnir de fromage, poulet et jalapeños. Plier et dorer sur la plancha à feu moyen jusqu'à ce que le fromage soit bien fondu."
-    },
-    {
-        id: 8,
         title: "Smash Burgers Double Cheese",
         category: "Burgers & Sandwichs",
         img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80",
@@ -489,77 +502,7 @@ const defaultMeals30 = [
         instructions: "Écraser très fermement les boules de bœuf sur plancha très chaude. Ajouter oignons très minces sous la viande. Poser le fromage, empiler et toaster les pains."
     },
     {
-        id: 9,
-        title: "Burgers de Dinde, Pesto & Provolone",
-        category: "Burgers & Sandwichs",
-        img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Rquette", "Tomates séchées"],
-            "Viandes": ["500g dinde hachée"],
-            "NonPérissables": ["4 pains à burger", "Pesto au basilic"],
-            "ProduitsLaitiers": ["4 tranches de fromage Provolone"],
-            "Surgelés": []
-        },
-        instructions: "Former les galettes de dinde assaisonnées. Cuire à feu moyen sur plancha 5-6 min par côté. Fondez le provolone dessus et étalez le pesto sur les pains grillés."
-    },
-    {
-        id: 10,
-        title: "Burgers de Saumon Sauce Aneth",
-        category: "Burgers & Sandwichs",
-        img: "https://images.unsplash.com/photo-1520072959219-c595dc870360?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Concombre", "Aneth frais", "Citron"],
-            "Viandes": ["500g haché ou pavé de saumon haché au couteau"],
-            "NonPérissables": ["4 pains à burger", "Mayonnaise"],
-            "ProduitsLaitiers": ["Yoourt grec"],
-            "Surgelés": []
-        },
-        instructions: "Formez les galettes de saumon. Griller 3 min de chaque côté sur plancha chaude. Servir dans les pains grillés avec sauce yaourt-aneth-citron et concombre."
-    },
-    {
-        id: 11,
-        title: "Philly Cheesesteak",
-        category: "Burgers & Sandwichs",
-        img: "https://images.unsplash.com/photo-1509722747041-616f39b57569?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["2 poivrons vert/rouge", "2 oignons jaunes"],
-            "Viandes": ["500g faux-filet ou ribeye tranché très fin"],
-            "NonPérissables": ["4 pains sous-marin / baguettes douces"],
-            "ProduitsLaitiers": ["Provolone ou Cheese Whiz", "Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Faire sauter poivrons et oignons émincés. Saisir la viande très fine rapidement. Mélanger viande et légumes, recouvrir de fromage pour le faire fondre. Enfourner dans les pains."
-    },
-    {
-        id: 12,
-        title: "Sandwich Cubano Pressé",
-        category: "Burgers & Sandwichs",
-        img: "https://images.unsplash.com/photo-1621800043295-a73f2f76e2f6?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Cornichons à la dill"],
-            "Viandes": ["200g porc rôti effiloché", "200g jambon blanc"],
-            "NonPérissables": ["Pain cubain ou ciabatta", "Moutarde jaune"],
-            "ProduitsLaitiers": ["8 tranches de fromage Suisse", "Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Assembler le sandwich. Beurrer l'extérieur du pain. Déposer sur la plancha et presser avec un poids/presse à plancha 3-4 min par côté jusqu'à ce que le fromage coule."
-    },
-    {
-        id: 13,
-        title: "Grilled Cheese Oignons Confits & Bacon",
-        category: "Burgers & Sandwichs",
-        img: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["2 oignons jaunes"],
-            "Viandes": ["8 tranches de bacon"],
-            "NonPérissables": ["8 tranches de pain de campagne"],
-            "ProduitsLaitiers": ["Fromage Gruyère ou Cheddar fort", "Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Caraméliser lentement les oignons sur la plancha. Cuire le bacon. Assembler les sandwichs avec fromage. Dorer sur plancha beurrée à feu doux-moyen."
-    },
-    {
-        id: 14,
+        id: 5,
         title: "Bavette Chimichurri & Asperges",
         category: "Steaks & Grills",
         img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80",
@@ -571,237 +514,48 @@ const defaultMeals30 = [
             "Surgelés": []
         },
         instructions: "Saisir la bavette 3-4 min par côté à feu vif. Cuire les asperges en parallèle avec huile d'olive et fleur de sel. Servir avec sauce chimichurri fraîche."
-    },
-    {
-        id: 15,
-        title: "Onglet de Bœuf & Légumes Grills",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1558030006-450675393462?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Courgettes", "Champignons de Paris", "Ail"],
-            "Viandes": ["600g onglet de bœuf"],
-            "NonPérissables": ["Huile d'olive", "Herbes de Provence"],
-            "ProduitsLaitiers": ["Beurre à l'ail"],
-            "Surgelés": []
-        },
-        instructions: "Griller l'onglet 3 min par côté. Trancher courgettes et champignons et les faire sauter sur la plancha à côté. Mettre une noix de beurre à l'ail sur la viande au repos."
-    },
-    {
-        id: 16,
-        title: "Brochettes Poulet Souvlaki & Pitas",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Citron", "Concombre", "Ail", "Oignon rouge"],
-            "Viandes": ["600g poitrines de poulet en cubes"],
-            "NonPérissables": ["Pains pitas", "Origan séché", "Huile d'olive"],
-            "ProduitsLaitiers": ["Tzatziki / Yaourt grec"],
-            "Surgelés": []
-        },
-        instructions: "Mariner le poulet dans citron, huile, ail et origan. Monter en brochettes et griller sur plancha 10-12 min. Griller les pitas 1 min et servir avec tzatziki."
-    },
-    {
-        id: 17,
-        title: "Poulet Cajun & Maïs Grillé",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["4 épis de maïs frais", "Lime"],
-            "Viandes": ["600g hauts de cuisse de poulet désossés"],
-            "NonPérissables": ["Épices cajun", "Huile d'olive"],
-            "ProduitsLaitiers": ["Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Enrober le poulet d'épices cajun. Cuire sur plancha 6-8 min par côté. Griller les épis de maïs préalablement bouillis sur la plancha avec du beurre jusqu'à coloration."
-    },
-    {
-        id: 18,
-        title: "Paillard de Poulet Citron & Câpres",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["2 citrons", "Persil"],
-            "Viandes": ["600g poitrines de poulet très aplaties"],
-            "NonPérissables": ["Câpres", "Huile d'olive"],
-            "ProduitsLaitiers": ["Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Aplatir le poulet finement. Saisir très vite (2 min par côté) sur plancha très chaude. Arroser de jus de citron, câpres, beurre et persil haché."
-    },
-    {
-        id: 19,
-        title: "Saumon Unilatéral Peau Croustillante",
-        category: "Poissons & Fruits de mer",
-        img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Courgettes", "Citrons"],
-            "Viandes": ["4 pavés de saumon avec peau"],
-            "NonPérissables": ["Huile d'olive", "Aneth"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Poser les pavés côté peau sur feu moyen. Cuire à 80% sans retourner pour rendre la peau ultra-croustillante. Saisir rapidement le dessus 30 secondes à la fin."
-    },
-    {
-        id: 20,
-        title: "Crevettes Ail, Lime & Tequila",
-        category: "Poissons & Fruits de mer",
-        img: "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Ail abondant", "Limes", "Coriandre"],
-            "Viandes": ["600g grosses crevettes décortiquées"],
-            "NonPérissables": ["Huile d'olive", "Tequila (facultatif)"],
-            "ProduitsLaitiers": ["Beurre"],
-            "Surgelés": []
-        },
-        instructions: "Saisir les crevettes sur plancha brûlante 2 min avec ail et beurre. Déglacer avec le jus de lime et un trait de tequila. Parsemer de coriandre."
-    },
-    {
-        id: 21,
-        title: "Calmars Grillés Persillade",
-        category: "Poissons & Fruits de mer",
-        img: "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Persil plat", "Ail", "Citron"],
-            "Viandes": ["500g tubes ou tentacules de calmars nettoyés"],
-            "NonPérissables": ["Huile d'olive", "Fleur de sel"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Tailler les calmars. Les jeter sur la plancha fumante très huilée pendant seulement 2 minutes maximum pour garder la tendreté. Ajouter persil, ail et citron."
-    },
-    {
-        id: 22,
-        title: "Steaks de Thon Saisis Teriyaki",
-        category: "Poissons & Fruits de mer",
-        img: "https://images.unsplash.com/photo-1501595091296-3aa970afb3ff?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Gingembre", "Ciboulette"],
-            "Viandes": ["4 steaks de thon rouge"],
-            "NonPérissables": ["Sauce teriyaki", "Graines de sésame"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Saisir le thon 1 minute seulement par côté sur plancha très chaude pour garder le centre mi-cru. Badigeonner de sauce teriyaki et parsemer de sésame."
-    },
-    {
-        id: 23,
-        title: "Tofu Grillé Gingembre & Bok Choy",
-        category: "Végétarien",
-        img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["4 mini bok choy", "Gingembre frais"],
-            "Viandes": ["2 blocs de tofu extra-ferme"],
-            "NonPérissables": ["Sauce soja", "Huile de sésame", "Riz basmati"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Presser et trancher le tofu. Griller sur la plancha huilée jusqu'à consistance dorée et croustillante. Griller les bok choy coupés en deux à côté."
-    },
-    {
-        id: 24,
-        title: "Riz Frit Teppanyaki (Poulet ou Crevettes)",
-        category: "Asiatique & Teppanyaki",
-        img: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Oignons verts", "Carottes en dés", "Ail"],
-            "Viandes": ["300g poulet en dés ou crevettes"],
-            "NonPérissables": ["Riz cuit de la veille", "Sauce soja", "Huile de sésame"],
-            "ProduitsLaitiers": ["Beurre"],
-            "Surgelés": ["Pois congelés"]
-        },
-        instructions: "Faire sauter la viande et les légumes. Brouiller 2 œufs sur la plancha. Ajouter le riz froid, le beurre, la sauce soja et sauter le tout vigoureusement."
-    },
-    {
-        id: 25,
-        title: "Nouilles Yakisoba Sautées",
-        category: "Asiatique & Teppanyaki",
-        img: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Chou chinois", "Oignons", "Carottes"],
-            "Viandes": ["300g porc ou poulet en minces lanières"],
-            "NonPérissables": ["Nouilles yakisoba/ramen", "Sauce yakisoba"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Saisir la viande et les légumes tranchés fin sur la plancha. Ajouter les nouilles précuites, arroser de sauce yakisoba et mélanger le tout à deux spatules."
-    },
-    {
-        id: 26,
-        title: "Halloumi Grillé & Légumes Méditerranéens",
-        category: "Végétarien",
-        img: "https://images.unsplash.com/photo-1592417817098-8f3d6ef23a81?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Courgettes", "Poivrons", "Aubergine", "Basilic"],
-            "Viandes": [],
-            "NonPérissables": ["Huile d'olive", "Réduction de vinaigre balsamique"],
-            "ProduitsLaitiers": ["400g fromage Halloumi"],
-            "Surgelés": []
-        },
-        instructions: "Trancher le halloumi et les légumes. Saisir le halloumi 2 min par côté sans matière grasse. Saisir les légumes à l'huile d'olive. Arroser de balsamique."
-    },
-    {
-        id: 27,
-        title: "Côtelettes d'Agneau aux Herbes",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Ail", "Rarin/Thym frais"],
-            "Viandes": ["8 côtelettes d'agneau"],
-            "NonPérissables": ["Huile d'olive", "Fleur de sel"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Mariner les côtelettes avec huile, ail pilé et romarin. Cuire sur plancha très chaude 3-4 min par côté pour une cuisson rosée idéale."
-    },
-    {
-        id: 28,
-        title: "Saucisses Italiennes & Poivrons Sautés",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1541529086526-db283c563270?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["3 poivrons doux", "2 oignons rouges"],
-            "Viandes": ["6 saucisses italiennes douces ou piquantes"],
-            "NonPérissables": ["Pains à hot-dog/italiens", "Huile d'olive"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Cuire les saucisses à feu moyen sur la plancha en les tournant. Faire caraméliser poivrons et oignons émincés à côté. Servir dans pains toastés."
-    },
-    {
-        id: 29,
-        title: "Souvlaki de Porc & Courgettes",
-        category: "Steaks & Grills",
-        img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Courgettes", "Citrons", "Oignon rouge"],
-            "Viandes": ["600g filet de porc en cubes"],
-            "NonPérissables": ["Pitas", "Huile d'olive", "Origan"],
-            "ProduitsLaitiers": ["Tzatziki"],
-            "Surgelés": []
-        },
-        instructions: "Mariner le porc (citron, origan, huile, ail). Monter en brochettes avec oignons. Saisir sur plancha 10 min. Griller des rondelles de courgettes."
-    },
-    {
-        id: 30,
-        title: "Pizza Naan Croquante sur Plancha",
-        category: "Autre",
-        img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80",
-        ingredients: {
-            "Fruits/Légumes": ["Basilic frais", "Tomates cerises"],
-            "Viandes": ["Prosciutto ou pepperoni"],
-            "NonPérissables": ["4 pains Naan", "Sauce tomate à pizza"],
-            "ProduitsLaitiers": ["Mozzarella fraîche"],
-            "Surgelés": []
-        },
-        instructions: "Griller un côté du pain Naan sur la plancha. Retourner, garnir rapidement de sauce, mozzarella et garnitures. Couvrir d'une cloche à plancha 3 min pour fondre le fromage."
     }
 ];
 
 let meals = [];
 let selectedMealIds = [];
+let currentOpenMealId = null;
 
-function loadDatabase() {
+let apiConfig = {
+    url: "",
+    key: ""
+};
+
+async function loadDatabase() {
+    const savedConfig = localStorage.getItem('plancha_api_config');
+    if (savedConfig) {
+        apiConfig = JSON.parse(savedConfig);
+        document.getElementById('config-api-url').value = apiConfig.url;
+        document.getElementById('config-api-key').value = apiConfig.key;
+    }
+
+    if (apiConfig.url && apiConfig.key) {
+        document.getElementById('backend-badge').className = "backend-status status-online";
+        document.getElementById('backend-badge').innerText = "🌐 Mode : BD Partagée en Ligne (Cloud)";
+        try {
+            const res = await fetch(apiConfig.url, {
+                headers: { "X-Master-Key": apiConfig.key, "X-Bin-Meta": "false" }
+            });
+            const data = await res.json();
+            meals = Array.isArray(data) ? data : (data.record || defaultMeals30);
+        } catch (e) {
+            console.error("Erreur Cloud DB, fallback local:", e);
+            loadLocal();
+        }
+    } else {
+        loadLocal();
+    }
+    renderCatalog();
+}
+
+function loadLocal() {
+    document.getElementById('backend-badge').className = "backend-status status-local";
+    document.getElementById('backend-badge').innerText = "🌐 Mode : Stockage Local (Non partagé)";
     const saved = localStorage.getItem('plancha_meals_db_v30');
     if (saved) {
         meals = JSON.parse(saved);
@@ -811,12 +565,54 @@ function loadDatabase() {
     }
 }
 
-function saveDatabase() {
+async function saveDatabase() {
     localStorage.setItem('plancha_meals_db_v30', JSON.stringify(meals));
+
+    if (apiConfig.url && apiConfig.key) {
+        try {
+            await fetch(apiConfig.url, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": apiConfig.key
+                },
+                body: JSON.stringify(meals)
+            });
+        } catch (e) {
+            console.error("Erreur lors de la sauvegarde cloud:", e);
+        }
+    }
+}
+
+function saveApiConfig() {
+    const url = document.getElementById('config-api-url').value.trim();
+    const key = document.getElementById('config-api-key').value.trim();
+
+    if (!url || !key) {
+        alert("Veuillez saisir l'URL et la clé API.");
+        return;
+    }
+
+    apiConfig = { url, key };
+    localStorage.setItem('plancha_api_config', JSON.stringify(apiConfig));
+    alert("Configuration enregistrée ! Chargement de la BD partagée...");
+    loadDatabase();
+    switchTab('catalog');
+}
+
+function disableApiConfig() {
+    localStorage.removeItem('plancha_api_config');
+    apiConfig = { url: "", key: "" };
+    document.getElementById('config-api-url').value = "";
+    document.getElementById('config-api-key').value = "";
+    alert("Retour au mode Local.");
+    loadLocal();
+    renderCatalog();
+    switchTab('catalog');
 }
 
 function resetToDefault30() {
-    if (confirm("Voulez-vous réinitialiser le catalogue avec les 30 recettes par défaut ?")) {
+    if (confirm("Voulez-vous réinitialiser le catalogue avec les recettes par défaut ?")) {
         meals = [...defaultMeals30];
         saveDatabase();
         renderCatalog();
@@ -825,7 +621,6 @@ function resetToDefault30() {
 
 function init() {
     loadDatabase();
-    renderCatalog();
 }
 
 function renderCatalog() {
@@ -870,6 +665,7 @@ function switchTab(tab, evt) {
     document.getElementById('tab-menu').classList.add('hidden');
     document.getElementById('tab-grocery').classList.add('hidden');
     document.getElementById('tab-add').classList.add('hidden');
+    document.getElementById('tab-config').classList.add('hidden');
 
     if (tab === 'catalog') {
         document.getElementById('tab-catalog').classList.remove('hidden');
@@ -882,7 +678,10 @@ function switchTab(tab, evt) {
         renderGrocery();
     } else if (tab === 'add') {
         document.getElementById('tab-add').classList.remove('hidden');
+    } else if (tab === 'config') {
+        document.getElementById('tab-config').classList.remove('hidden');
     }
+
     if (evt && evt.target) {
         evt.target.classList.add('active');
     }
@@ -950,25 +749,6 @@ function renderGrocery() {
     container.innerHTML = html;
 }
 
-function autoFetchRecipeInfo(url) {
-    if (!url) return;
-    try {
-        const urlObj = new URL(url);
-        const pathSegments = urlObj.pathname.split('/').filter(p => p.length > 0);
-        if (pathSegments.length > 0) {
-            let rawTitle = pathSegments[pathSegments.length - 1]
-                .replace(/-/g, ' ')
-                .replace(/\.html?$/, '');
-            let formattedTitle = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
-            if (!document.getElementById('input-title').value) {
-                document.getElementById('input-title').value = formattedTitle;
-            }
-        }
-    } catch (e) {
-        // URL non valide
-    }
-}
-
 function parseIngredientsInput(inputStr) {
     if (!inputStr) return [];
     return inputStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
@@ -1003,22 +783,19 @@ function saveNewRecipe(e) {
     saveDatabase();
 
     document.getElementById('add-recipe-form').reset();
-    alert("Recette ajoutée avec succès au catalogue !");
-    
-    // Basculer vers le catalogue
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
-    document.getElementById('tab-add').classList.add('hidden');
-    document.getElementById('tab-catalog').classList.remove('hidden');
-    renderCatalog();
+    alert("Recette ajoutée avec succès !");
+    switchTab('catalog');
 }
 
 function openRecipe(id) {
+    currentOpenMealId = id;
     const meal = meals.find(m => m.id === id);
     if (!meal) return;
+    
     document.getElementById('modal-title').innerText = meal.title;
     document.getElementById('modal-img').src = meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80';
-    
+    document.getElementById('edit-img-url').value = meal.img || '';
+
     const linkContainer = document.getElementById('modal-link-container');
     if (meal.sourceUrl) {
         linkContainer.innerHTML = `<a href="${meal.sourceUrl}" target="_blank" style="color:var(--primary);">🔗 Voir la recette originale sur le Web</a>`;
@@ -1040,8 +817,27 @@ function openRecipe(id) {
     document.getElementById('recipe-modal').style.display = 'flex';
 }
 
+function updateRecipeImage() {
+    if (!currentOpenMealId) return;
+    const newUrl = document.getElementById('edit-img-url').value.trim();
+    if (!newUrl) {
+        alert("Veuillez saisir une URL valide.");
+        return;
+    }
+
+    const meal = meals.find(m => m.id === currentOpenMealId);
+    if (meal) {
+        meal.img = newUrl;
+        document.getElementById('modal-img').src = newUrl;
+        saveDatabase();
+        renderCatalog();
+        alert("Image mise à jour avec succès !");
+    }
+}
+
 function closeModal() {
     document.getElementById('recipe-modal').style.display = 'none';
+    currentOpenMealId = null;
 }
 
 init();
