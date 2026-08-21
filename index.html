@@ -76,6 +76,8 @@
             transition: transform 0.2s;
             cursor: pointer;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .card:hover {
@@ -91,6 +93,9 @@
 
         .card-body {
             padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .card-title {
@@ -104,6 +109,24 @@
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        .btn-recipe-preview {
+            margin-top: auto;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-recipe-preview:hover {
+            background: #e2e8f0;
+            color: #0f172a;
         }
 
         .checkbox-container {
@@ -124,7 +147,6 @@
             cursor: pointer;
         }
 
-        /* Formulaire Ajouter */
         .form-container {
             background: white;
             padding: 25px;
@@ -180,7 +202,6 @@
             font-weight: bold;
         }
 
-        /* Modal / Detail */
         .modal {
             display: none;
             position: fixed;
@@ -213,7 +234,6 @@
             cursor: pointer;
         }
 
-        /* Grocery List */
         .grocery-section {
             background: white;
             border-radius: 8px;
@@ -237,22 +257,51 @@
             border-bottom: 1px solid #f1f5f9;
         }
 
-        .counter {
+        .counter-box {
             text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .counter-text {
             font-weight: bold;
             font-size: 1.2em;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+        }
+
+        .action-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .unselect-btn {
+            background: #e11d48;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .unselect-btn:hover {
+            background: #be123c;
         }
 
         .reset-btn {
-            background: #ef4444;
+            background: #64748b;
             color: white;
             border: none;
             padding: 8px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85em;
-            margin-top: 10px;
         }
 
         .image-edit-box {
@@ -302,10 +351,14 @@
         <button class="tab-btn" onclick="switchTab('config', event)">⚙️ Configuration BD</button>
     </div>
 
-    <div id="counter" class="counter">
-        Repas sélectionnés : <span id="selected-count">0</span> / 5
-        <br>
-        <button class="reset-btn" onclick="resetToDefault30()">🔄 Réinitialiser les 30 recettes par défaut</button>
+    <div class="counter-box">
+        <div class="counter-text">
+            Repas sélectionnés : <span id="selected-count">0</span> / 5
+        </div>
+        <div class="action-btn-group">
+            <button class="unselect-btn" onclick="clearWeeklySelections()">🧹 Désélectionner les repas de la semaine</button>
+            <button class="reset-btn" onclick="resetToDefault30()">🔄 Réinitialiser les 30 recettes par défaut</button>
+        </div>
     </div>
 
     <!-- Catalogue -->
@@ -316,7 +369,7 @@
     <!-- Menu -->
     <div id="tab-menu" class="hidden">
         <h2>Votre Menu Hebdomadaire</h2>
-        <p><em>Cliquez sur l'image d'un plat pour ouvrir la fiche recette.</em></p>
+        <p><em>Cliquez sur la carte ou sur l'image d'un plat pour ouvrir la fiche recette.</em></p>
         <div id="menu-grid" class="grid"></div>
     </div>
 
@@ -619,6 +672,11 @@ function resetToDefault30() {
     }
 }
 
+function clearWeeklySelections() {
+    selectedMealIds = [];
+    renderCatalog();
+}
+
 function init() {
     loadDatabase();
 }
@@ -634,6 +692,7 @@ function renderCatalog() {
             <div class="card-body">
                 <div class="card-category">${meal.category}</div>
                 <div class="card-title">${meal.title}</div>
+                <button class="btn-recipe-preview" onclick="event.stopPropagation(); openRecipe(${meal.id})">📖 Voir la recette & ingrédients</button>
             </div>
         </div>
     `).join('');
