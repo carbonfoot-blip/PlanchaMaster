@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plancha Master - Générateur de Menu</title>
+    <title>Plancha Master - Générateur de Menu & Recettes</title>
     <style>
         :root {
             --primary: #d97706;
@@ -29,7 +29,7 @@
 
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         h1 {
@@ -42,10 +42,11 @@
             justify-content: center;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
-            padding: 10px 20px;
+            padding: 10px 18px;
             border: 1px solid var(--border);
             background: var(--card-bg);
             border-radius: 8px;
@@ -123,7 +124,52 @@
             cursor: pointer;
         }
 
-        /* Modal / Recipe Detail */
+        /* Formulaire Ajouter */
+        .form-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.95em;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Modal / Detail */
         .modal {
             display: none;
             position: fixed;
@@ -195,33 +241,106 @@
 <div class="container">
     <header>
         <h1>🔥 Plancha Master</h1>
-        <p>Planifiez vos 5 repas de la semaine sur la plancha</p>
+        <p>Générez votre menu de 5 repas et votre liste d'épicerie sur mesure</p>
     </header>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('catalog')">1. Choisir les repas</button>
         <button class="tab-btn" onclick="switchTab('menu')">2. Menu de la semaine</button>
         <button class="tab-btn" onclick="switchTab('grocery')">3. Liste d'épicerie</button>
+        <button class="tab-btn" onclick="switchTab('add')">➕ Ajouter une recette</button>
     </div>
 
     <div id="counter" class="counter">Repas sélectionnés : <span id="selected-count">0</span> / 5</div>
 
-    <!-- Catalogue de choix -->
+    <!-- Catalogue -->
     <div id="tab-catalog">
         <div id="catalog-grid" class="grid"></div>
     </div>
 
-    <!-- Menu de la semaine -->
+    <!-- Menu -->
     <div id="tab-menu" class="hidden">
         <h2>Votre Menu Hebdomadaire</h2>
-        <p><em>Cliquez sur l'image d'un plat pour afficher sa recette.</em></p>
+        <p><em>Cliquez sur l'image d'un plat pour ouvrir la fiche recette.</em></p>
         <div id="menu-grid" class="grid"></div>
     </div>
 
-    <!-- Liste d'épicerie -->
+    <!-- Épicerie -->
     <div id="tab-grocery" class="hidden">
         <h2>Votre Liste d'Épicerie Organisée</h2>
         <div id="grocery-container"></div>
+    </div>
+
+    <!-- Formulaire d'ajout -->
+    <div id="tab-add" class="hidden">
+        <div class="form-container">
+            <h2>Ajouter une nouvelle recette Plancha</h2>
+            <p>Saisissez le lien Web de la recette ou remplissez manuellement le formulaire pour la reformatting et l'intégrer au catalogue.</p>
+            
+            <form id="add-recipe-form" onsubmit="saveNewRecipe(event)">
+                <div class="form-group">
+                    <label>Lien Web de la recette (facultatif) :</label>
+                    <input type="url" id="input-url" placeholder="https://exemple.com/recette-tacos" onblur="autoFetchRecipeInfo(this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Titre de la recette :</label>
+                    <input type="text" id="input-title" required placeholder="Ex: Tacos au Poulet Chipotle">
+                </div>
+
+                <div class="form-group">
+                    <label>Catégorie :</label>
+                    <select id="input-category">
+                        <option>Tacos & Mexicain</option>
+                        <option>Burgers & Sandwichs</option>
+                        <option>Steaks & Grills</option>
+                        <option>Poissons & Fruits de mer</option>
+                        <option>Végétarien</option>
+                        <option>Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>URL de l'image (laissée vide pour image par défaut) :</label>
+                    <input type="url" id="input-img" placeholder="https://images.unsplash.com/...">
+                </div>
+
+                <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
+                <p><strong>Ingrédients par rayon d'épicerie :</strong> (Séparez les ingrédients par des virgules)</p>
+
+                <div class="form-group">
+                    <label>🥦 Fruits & Légumes :</label>
+                    <input type="text" id="ing-veg" placeholder="Ex: 2 lime, 1 bouquet de coriandre, 1 oignon rouge">
+                </div>
+
+                <div class="form-group">
+                    <label>🥩 Viandes & Poissons :</label>
+                    <input type="text" id="ing-meat" placeholder="Ex: 600g poitrine de poulet">
+                </div>
+
+                <div class="form-group">
+                    <label>📦 Non-Périssable (Allées) :</label>
+                    <input type="text" id="ing-pantry" placeholder="Ex: 12 tortillas de maïs, huile d'olive, épices">
+                </div>
+
+                <div class="form-group">
+                    <label>🧀 Produits Laitiers :</label>
+                    <input type="text" id="ing-dairy" placeholder="Ex: Crème sure, Fromage râpé">
+                </div>
+
+                <div class="form-group">
+                    <label>❄️ Surgelés :</label>
+                    <input type="text" id="ing-frozen" placeholder="Ex: Maïs en grains">
+                </div>
+
+                <div class="form-group">
+                    <label>Instructions de cuisson Plancha :</label>
+                    <textarea id="input-instructions" rows="4" required placeholder="Étapes de préparation et temps de cuisson sur la plancha..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">💾 Enregistrer la recette dans la base de données</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -231,6 +350,7 @@
         <button class="close-btn" onclick="closeModal()">&times;</button>
         <h2 id="modal-title"></h2>
         <img id="modal-img" style="width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:15px;" src="" alt="">
+        <p id="modal-link-container"></p>
         <h3>Ingrédients</h3>
         <ul id="modal-ingredients"></ul>
         <h3>Instructions sur Plancha</h3>
@@ -239,15 +359,15 @@
 </div>
 
 <script>
-const meals = [
+const defaultMeals = [
     {
         id: 1,
         title: "Tacos al Pastor",
         category: "Tacos & Mexicain",
         img: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=500&q=80",
         ingredients: {
-            "Viandes": ["600g porc (échine) mince"],
             "Fruits/Légumes": ["1/2 ananas frais", "1 oignon rouge", "Coriandre fraîche", "Limes"],
+            "Viandes": ["600g porc (échine) mince"],
             "NonPérissables": ["Tortillas de maïs", "Épices achiote / chili"],
             "ProduitsLaitiers": [],
             "Surgelés": []
@@ -260,13 +380,13 @@ const meals = [
         category: "Burgers & Sandwichs",
         img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80",
         ingredients: {
-            "Viandes": ["600g bœuf haché 80/20"],
             "Fruits/Légumes": ["1 oignon jaune émincé", "Laitue", "Tomate"],
+            "Viandes": ["600g bœuf haché 80/20"],
             "NonPérissables": ["4 pains briochés", "Sauce burger", "Cornichons"],
-            "ProduitsLaitiers": ["8 tranches de fromage American/Cheddar", "Beurre"],
+            "ProduitsLaitiers": ["8 tranches de fromage Cheddar", "Beurre"],
             "Surgelés": []
         },
-        instructions: "Former 8 boules de bœuf. Écraser très fermement sur plancha très chaude. Ajouter les oignons émincés sous la viande. Mettre le fromage, empiler 2 boulettes et toaster les pains avec du beurre."
+        instructions: "Former 8 boules de bœuf. Écraser très fermement sur plancha très chaude. Ajouter les oignons émincés sous la viande. Mettre le fromage, empiler 2 boulettes et toaster les pains."
     },
     {
         id: 3,
@@ -274,61 +394,35 @@ const meals = [
         category: "Steaks & Grills",
         img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80",
         ingredients: {
-            "Viandes": ["600g bavette de bœuf"],
             "Fruits/Légumes": ["Persil frais", "Ail", "Asperges"],
+            "Viandes": ["600g bavette de bœuf"],
             "NonPérissables": ["Huile d'olive", "Vinaigre de vin rouge"],
             "ProduitsLaitiers": [],
             "Surgelés": []
         },
-        instructions: "Saisir la bavette 3-4 min par côté à feu vif. Saisir les asperges à côté avec huile et sel. Servir la viande tranchée contre le grain nappée de sauce chimichurri maison."
-    },
-    {
-        id: 4,
-        title: "Fajitas au Poulet",
-        category: "Tacos & Mexicain",
-        img: "https://images.unsplash.com/photo-1534352956036-cd2d588814d4?w=500&q=80",
-        ingredients: {
-            "Viandes": ["500g poitrines de poulet"],
-            "Fruits/Légumes": ["3 poivrons de couleurs", "1 gros oignon"],
-            "NonPérissables": ["Tortillas de blé", "Mélange d'épices fajitas"],
-            "ProduitsLaitiers": ["Crème sure", "Fromage râpé"],
-            "Surgelés": []
-        },
-        instructions: "Griller les lanières de poulet et les légumes à feu moyen-vif pendant 8-10 minutes. Mélanger avec les épices. Servir chaud dans des tortillas chauffées."
-    },
-    {
-        id: 5,
-        title: "Saumon Unilatéral",
-        category: "Poissons",
-        img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&q=80",
-        ingredients: {
-            "Viandes": ["4 pavés de saumon avec peau"],
-            "Fruits/Légumes": ["Courgettes", "Citrons"],
-            "NonPérissables": ["Huile d'olive", "Aneth"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Poser les pavés côté peau sur feu moyen. Laisser cuire à 80% sans les retourner pour une peau ultra-croustillante. Cuire les tranches de courgettes à côté."
-    },
-    {
-        id: 6,
-        title: "Tofu Grillé Teriyaki",
-        category: "Végétarien",
-        img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80",
-        ingredients: {
-            "Viandes": ["2 blocs de tofu ferme"],
-            "Fruits/Légumes": ["Bok choy", "Gingembre frais"],
-            "NonPérissables": ["Sauce teriyaki", "Graines de sésame", "Riz basmati"],
-            "ProduitsLaitiers": [],
-            "Surgelés": []
-        },
-        instructions: "Presser le tofu et le trancher. Saisir sur plancha huilée jusqu'à consistance dorée. Badigeonner de sauce teriyaki en fin de cuisson. Griller les bok choy coupés en deux."
+        instructions: "Saisir la bavette 3-4 min par côté à feu vif. Saisir les asperges à côté avec huile et sel. Servir la viande tranchée contre le grain nappée de chimichurri."
     }
 ];
 
+let meals = [];
 let selectedMealIds = [];
 
+function loadDatabase() {
+    const saved = localStorage.getItem('plancha_meals_db');
+    if (saved) {
+        meals = JSON.parse(saved);
+    } else {
+        meals = [...defaultMeals];
+        saveDatabase();
+    }
+}
+
+function saveDatabase() {
+    localStorage.setItem('plancha_meals_db', JSON.stringify(meals));
+}
+
 function init() {
+    loadDatabase();
     renderCatalog();
 }
 
@@ -339,7 +433,7 @@ function renderCatalog() {
             <div class="checkbox-container">
                 <input type="checkbox" id="chk-${meal.id}" ${selectedMealIds.includes(meal.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleMeal(${meal.id})">
             </div>
-            <img src="${meal.img}" alt="${meal.title}" onerror="this.src='https://via.placeholder.com/300x180?text=Plancha+Meal'">
+            <img src="${meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'}" alt="${meal.title}" onerror="this.src='https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'">
             <div class="card-body">
                 <div class="card-category">${meal.category}</div>
                 <div class="card-title">${meal.title}</div>
@@ -359,7 +453,8 @@ function toggleMeal(id) {
         }
         selectedMealIds.push(id);
     }
-    document.getElementById(`chk-${id}`).checked = selectedMealIds.includes(id);
+    const chk = document.getElementById(`chk-${id}`);
+    if (chk) chk.checked = selectedMealIds.includes(id);
     updateCounter();
 }
 
@@ -372,19 +467,21 @@ function switchTab(tab) {
     document.getElementById('tab-catalog').classList.add('hidden');
     document.getElementById('tab-menu').classList.add('hidden');
     document.getElementById('tab-grocery').classList.add('hidden');
+    document.getElementById('tab-add').classList.add('hidden');
 
     if (tab === 'catalog') {
         document.getElementById('tab-catalog').classList.remove('hidden');
-        event.target.classList.add('active');
+        renderCatalog();
     } else if (tab === 'menu') {
         document.getElementById('tab-menu').classList.remove('hidden');
-        event.target.classList.add('active');
         renderMenu();
     } else if (tab === 'grocery') {
         document.getElementById('tab-grocery').classList.remove('hidden');
-        event.target.classList.add('active');
         renderGrocery();
+    } else if (tab === 'add') {
+        document.getElementById('tab-add').classList.remove('hidden');
     }
+    event.target.classList.add('active');
 }
 
 function renderMenu() {
@@ -392,13 +489,13 @@ function renderMenu() {
     const selectedMeals = meals.filter(m => selectedMealIds.includes(m.id));
 
     if (selectedMeals.length === 0) {
-        grid.innerHTML = "<p>Aucun repas sélectionné. Allez dans l'onglet 'Choisir les repas'.</p>";
+        grid.innerHTML = "<p>Aucun repas sélectionné. Choisissez 5 repas dans le catalogue.</p>";
         return;
     }
 
     grid.innerHTML = selectedMeals.map(meal => `
         <div class="card" onclick="openRecipe(${meal.id})">
-            <img src="${meal.img}" alt="${meal.title}">
+            <img src="${meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'}" alt="${meal.title}">
             <div class="card-body">
                 <div class="card-category">${meal.category}</div>
                 <div class="card-title">${meal.title}</div>
@@ -429,7 +526,7 @@ function renderGrocery() {
     categories.forEach(cat => {
         let items = [];
         selectedMeals.forEach(meal => {
-            if (meal.ingredients[cat.key]) {
+            if (meal.ingredients && meal.ingredients[cat.key]) {
                 items = items.concat(meal.ingredients[cat.key]);
             }
         });
@@ -449,17 +546,85 @@ function renderGrocery() {
     container.innerHTML = html;
 }
 
+function autoFetchRecipeInfo(url) {
+    if (!url) return;
+    try {
+        const urlObj = new URL(url);
+        const pathSegments = urlObj.pathname.split('/').filter(p => p.length > 0);
+        if (pathSegments.length > 0) {
+            let rawTitle = pathSegments[pathSegments.length - 1]
+                .replace(/-/g, ' ')
+                .replace(/\.html?$/, '');
+            let formattedTitle = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
+            if (!document.getElementById('input-title').value) {
+                document.getElementById('input-title').value = formattedTitle;
+            }
+        }
+    } catch (e) {
+        // URL non valide, pas d'action
+    }
+}
+
+function parseIngredientsInput(inputStr) {
+    if (!inputStr) return [];
+    return inputStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+}
+
+function saveNewRecipe(e) {
+    e.preventDefault();
+
+    const title = document.getElementById('input-title').value;
+    const category = document.getElementById('input-category').value;
+    const img = document.getElementById('input-img').value || "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80";
+    const url = document.getElementById('input-url').value;
+    const instructions = document.getElementById('input-instructions').value;
+
+    const newMeal = {
+        id: Date.now(),
+        title: title,
+        category: category,
+        img: img,
+        sourceUrl: url,
+        ingredients: {
+            "Fruits/Légumes": parseIngredientsInput(document.getElementById('ing-veg').value),
+            "Viandes": parseIngredientsInput(document.getElementById('ing-meat').value),
+            "NonPérissables": parseIngredientsInput(document.getElementById('ing-pantry').value),
+            "ProduitsLaitiers": parseIngredientsInput(document.getElementById('ing-dairy').value),
+            "Surgelés": parseIngredientsInput(document.getElementById('ing-frozen').value)
+        },
+        instructions: instructions
+    };
+
+    meals.push(newMeal);
+    saveDatabase();
+
+    document.getElementById('add-recipe-form').reset();
+    alert("Recette ajoutée avec succès au catalogue !");
+    switchTab('catalog');
+}
+
 function openRecipe(id) {
     const meal = meals.find(m => m.id === id);
     document.getElementById('modal-title').innerText = meal.title;
-    document.getElementById('modal-img').src = meal.img;
+    document.getElementById('modal-img').src = meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80';
     
+    const linkContainer = document.getElementById('modal-link-container');
+    if (meal.sourceUrl) {
+        linkContainer.innerHTML = `<a href="${meal.sourceUrl}" target="_blank" style="color:var(--primary);">🔗 Voir la recette originale sur le Web</a>`;
+    } else {
+        linkContainer.innerHTML = "";
+    }
+
     let ingHtml = "";
-    Object.values(meal.ingredients).forEach(list => {
-        list.forEach(i => ingHtml += `<li>${i}</li>`);
-    });
+    if (meal.ingredients) {
+        Object.entries(meal.ingredients).forEach(([cat, list]) => {
+            if (list.length > 0) {
+                ingHtml += `<li><strong>${cat}:</strong> ${list.join(', ')}</li>`;
+            }
+        });
+    }
     
-    document.getElementById('modal-ingredients').innerHTML = ingHtml;
+    document.getElementById('modal-ingredients').innerHTML = ingHtml || "<li>Aucun ingrédient spécifié</li>";
     document.getElementById('modal-instructions').innerText = meal.instructions;
     document.getElementById('recipe-modal').style.display = 'flex';
 }
