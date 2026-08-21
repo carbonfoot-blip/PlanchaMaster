@@ -328,8 +328,8 @@
             display: inline-block;
             margin-bottom: 10px;
         }
-        .status-local { background: #e2e8f0; color: #475569; }
         .status-online { background: #dcfce7; color: #15803d; }
+        .status-local { background: #fee2e2; color: #b91c1c; }
 
         .hidden { display: none; }
     </style>
@@ -340,7 +340,7 @@
     <header>
         <h1>🔥 Plancha Master</h1>
         <p>Générez votre menu de 5 repas et votre liste d'épicerie sur mesure</p>
-        <div id="backend-badge" class="backend-status status-local">🌐 Mode : Stockage Local (Non partagé)</div>
+        <div id="backend-badge" class="backend-status status-online">🌐 Mode : BD Partagée en Ligne</div>
     </header>
 
     <div class="tabs">
@@ -348,7 +348,6 @@
         <button class="tab-btn" onclick="switchTab('menu', event)">2. Menu de la semaine</button>
         <button class="tab-btn" onclick="switchTab('grocery', event)">3. Liste d'épicerie</button>
         <button class="tab-btn" onclick="switchTab('add', event)">➕ Ajouter une recette</button>
-        <button class="tab-btn" onclick="switchTab('config', event)">⚙️ Configuration BD</button>
     </div>
 
     <div class="counter-box">
@@ -357,7 +356,7 @@
         </div>
         <div class="action-btn-group">
             <button class="unselect-btn" onclick="clearWeeklySelections()">🧹 Désélectionner les repas de la semaine</button>
-            <button class="reset-btn" onclick="resetToDefault30()">🔄 Réinitialiser les 30 recettes par défaut</button>
+            <button class="reset-btn" onclick="resetToDefault30()">🔄 Réinitialiser les recettes par défaut</button>
         </div>
     </div>
 
@@ -383,7 +382,7 @@
     <div id="tab-add" class="hidden">
         <div class="form-container">
             <h2>Ajouter une nouvelle recette Plancha</h2>
-            <p>Saisissez le lien Web de la recette ou remplissez le formulaire pour l'intégrer au catalogue partagé ou local.</p>
+            <p>Saisissez le lien Web de la recette ou remplissez le formulaire pour l'intégrer au catalogue partagé.</p>
             
             <form id="add-recipe-form" onsubmit="saveNewRecipe(event)">
                 <div class="form-group">
@@ -449,28 +448,6 @@
 
                 <button type="submit" class="btn-submit">💾 Enregistrer la recette</button>
             </form>
-        </div>
-    </div>
-
-    <!-- Configuration BD dynamique -->
-    <div id="tab-config" class="hidden">
-        <div class="form-container">
-            <h2>⚙️ Base de Données Partagée (Firebase / JSONBin)</h2>
-            <p>Pour synchroniser les recettes entre plusieurs personnes (en ligne), entrez vos identifiants d'API gratuits ci-dessous (ex: JSONBin.io ou Firebase Rest API).</p>
-            
-            <div class="form-group">
-                <label>URL du serveur / Bin ID (JSONBin ou Firebase) :</label>
-                <input type="text" id="config-api-url" placeholder="https://api.jsonbin.io/v3/b/VOTRE_BIN_ID ou URL Firebase">
-            </div>
-
-            <div class="form-group">
-                <label>Clé d'API / Secret Key (Master Key) :</label>
-                <input type="password" id="config-api-key" placeholder="$2a$10$...">
-            </div>
-
-            <button class="btn-action" onclick="saveApiConfig()" style="width:100%;">💾 Activer la synchronisation partagée</button>
-            <br><br>
-            <button class="reset-btn" onclick="disableApiConfig()" style="width:100%;">Désactiver et revenir au mode Local</button>
         </div>
     </div>
 </div>
@@ -574,33 +551,31 @@ let meals = [];
 let selectedMealIds = [];
 let currentOpenMealId = null;
 
-let apiConfig = {
-    url: "",
-    key: ""
+const apiConfig = {
+    url: "https://api.jsonbin.io/v3/b/6a88554bf5f4af5e29316143",
+    key: "$2a$10$AKWFiZ1UEzLmNmR8WGJEuO/uBJe1VDde8MXsPmcHWnGTpa1U7.MTW"
 };
 
 async function loadDatabase() {
-    const savedConfig = localStorage.getItem('plancha_api_config');
-    if (savedConfig) {
-        apiConfig = JSON.parse(savedConfig);
-        document.getElementById('config-api-url').value = apiConfig.url;
-        document.getElementById('config-api-key').value = apiConfig.key;
-    }
-
-    if (apiConfig.url && apiConfig.key) {
-        document.getElementById('backend-badge').className = "backend-status status-online";
-        document.getElementById('backend-badge').innerText = "🌐 Mode : BD Partagée en Ligne (Cloud)";
-        try {
-            const res = await fetch(apiConfig.url, {
-                headers: { "X-Master-Key": apiConfig.key, "X-Bin-Meta": "false" }
-            });
-            const data = await res.json();
+    try {
+        const res = await fetch(apiConfig.url, {
+            headers: { 
+                "X-Master-Key": apiConfig.key, 
+                "X-Bin-Meta": "false" 
+            }
+        });
+        const data = await res.json();
+        
+        if (Array.isArray(data) && data.length === 0) {
+            meals = [...defaultMeals30];
+            await saveDatabase();
+        } else {
             meals = Array.isArray(data) ? data : (data.record || defaultMeals30);
-        } catch (e) {
-            console.error("Erreur Cloud DB, fallback local:", e);
-            loadLocal();
         }
-    } else {
+        document.getElementById('backend-badge').className = "backend-status status-online";
+        document.getElementById('backend-badge').innerText = "🌐 Mode : BD Partagée en Ligne";
+    } catch (e) {
+        console.error("Erreur Cloud DB, passage en secours local:", e);
         loadLocal();
     }
     renderCatalog();
@@ -608,60 +583,30 @@ async function loadDatabase() {
 
 function loadLocal() {
     document.getElementById('backend-badge').className = "backend-status status-local";
-    document.getElementById('backend-badge').innerText = "🌐 Mode : Stockage Local (Non partagé)";
+    document.getElementById('backend-badge').innerText = "⚠️ Hors-ligne (Mode Local)";
     const saved = localStorage.getItem('plancha_meals_db_v30');
     if (saved) {
         meals = JSON.parse(saved);
     } else {
         meals = [...defaultMeals30];
-        saveDatabase();
     }
 }
 
 async function saveDatabase() {
     localStorage.setItem('plancha_meals_db_v30', JSON.stringify(meals));
 
-    if (apiConfig.url && apiConfig.key) {
-        try {
-            await fetch(apiConfig.url, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Master-Key": apiConfig.key
-                },
-                body: JSON.stringify(meals)
-            });
-        } catch (e) {
-            console.error("Erreur lors de la sauvegarde cloud:", e);
-        }
+    try {
+        await fetch(apiConfig.url, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Master-Key": apiConfig.key
+            },
+            body: JSON.stringify(meals)
+        });
+    } catch (e) {
+        console.error("Erreur lors de la sauvegarde cloud:", e);
     }
-}
-
-function saveApiConfig() {
-    const url = document.getElementById('config-api-url').value.trim();
-    const key = document.getElementById('config-api-key').value.trim();
-
-    if (!url || !key) {
-        alert("Veuillez saisir l'URL et la clé API.");
-        return;
-    }
-
-    apiConfig = { url, key };
-    localStorage.setItem('plancha_api_config', JSON.stringify(apiConfig));
-    alert("Configuration enregistrée ! Chargement de la BD partagée...");
-    loadDatabase();
-    switchTab('catalog');
-}
-
-function disableApiConfig() {
-    localStorage.removeItem('plancha_api_config');
-    apiConfig = { url: "", key: "" };
-    document.getElementById('config-api-url').value = "";
-    document.getElementById('config-api-key').value = "";
-    alert("Retour au mode Local.");
-    loadLocal();
-    renderCatalog();
-    switchTab('catalog');
 }
 
 function resetToDefault30() {
@@ -724,7 +669,6 @@ function switchTab(tab, evt) {
     document.getElementById('tab-menu').classList.add('hidden');
     document.getElementById('tab-grocery').classList.add('hidden');
     document.getElementById('tab-add').classList.add('hidden');
-    document.getElementById('tab-config').classList.add('hidden');
 
     if (tab === 'catalog') {
         document.getElementById('tab-catalog').classList.remove('hidden');
@@ -737,8 +681,6 @@ function switchTab(tab, evt) {
         renderGrocery();
     } else if (tab === 'add') {
         document.getElementById('tab-add').classList.remove('hidden');
-    } else if (tab === 'config') {
-        document.getElementById('tab-config').classList.remove('hidden');
     }
 
     if (evt && evt.target) {
