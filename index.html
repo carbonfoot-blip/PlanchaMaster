@@ -1,1394 +1,474 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-50">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plancha Master - Menu & Épicerie</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Plus Jakarta Sans', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#fff7ed',
-              100: '#ffedd5',
-              500: '#f97316',
-              600: '#ea580c',
-              700: '#c2410c',
-              900: '#7c2d12',
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plancha Master - Générateur de Menu</title>
+    <style>
+        :root {
+            --primary: #d97706;
+            --primary-hover: #b45309;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
         }
-      }
-    }
-  </script>
-  <style>
-    /* Printing styles */
-    @media print {
-      .no-print { display: none !important; }
-      .print-only { display: block !important; }
-      body { background: white !important; color: black !important; }
-      .shadow-lg, .shadow-md, .shadow-sm { box-shadow: none !important; }
-      .border { border-color: #cbd5e1 !important; }
-    }
-    .print-only { display: none; }
-    /* Hide scrollbar for tab navigation on mobile */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: #cbd5e1;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .card-category {
+            font-size: 0.85em;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .checkbox-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkbox-container input {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+
+        /* Modal / Recipe Detail */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5em;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        /* Grocery List */
+        .grocery-section {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .grocery-section h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .grocery-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .grocery-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .counter {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .hidden { display: none; }
+    </style>
 </head>
-<body class="h-full font-sans text-slate-800 flex flex-col min-h-screen">
+<body>
 
-  <!-- TOP HEADER -->
-  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 no-print shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-600/30">
-          <i class="fa-solid fa-fire-burner"></i>
-        </div>
-        <div>
-          <h1 class="text-lg font-bold leading-none tracking-wide text-white">Plancha<span class="text-brand-500">Master</span></h1>
-          <p class="text-xs text-slate-400 mt-0.5">Planificateur de soupers sur plancha</p>
-        </div>
-      </div>
+<div class="container">
+    <header>
+        <h1>🔥 Plancha Master</h1>
+        <p>Planifiez vos 5 repas de la semaine sur la plancha</p>
+    </header>
 
-      <!-- Quick Status & Action -->
-      <div class="flex items-center space-x-4">
-        <div class="hidden sm:flex items-center bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
-          <span class="text-xs text-slate-400 mr-2">Sélection :</span>
-          <span id="selected-count-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-600 text-white">0 / 5</span>
-        </div>
-        <button onclick="randomizeSelection()" class="bg-gradient-to-r from-brand-600 to-amber-600 hover:from-brand-500 hover:to-amber-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all shadow-md flex items-center space-x-1.5">
-          <i class="fa-solid fa-dice"></i>
-          <span class="hidden md:inline">Menu Aléatoire (5)</span>
-        </button>
-      </div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('catalog')">1. Choisir les repas</button>
+        <button class="tab-btn" onclick="switchTab('menu')">2. Menu de la semaine</button>
+        <button class="tab-btn" onclick="switchTab('grocery')">3. Liste d'épicerie</button>
     </div>
-  </header>
 
-  <!-- NAVIGATION TABS -->
-  <div class="bg-white border-b border-slate-200 sticky top-16 z-20 no-print shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <nav class="flex space-x-8 overflow-x-auto no-scrollbar" aria-label="Tabs">
-        <button onclick="switchTab('catalog')" id="tab-catalog" class="tab-btn border-brand-600 text-brand-600 font-bold whitespace-nowrap py-4 px-1 border-b-2 text-sm flex items-center space-x-2">
-          <i class="fa-solid fa-book-open"></i>
-          <span>1. Banque de Recettes (<span id="total-recipes-count">30</span>)</span>
-        </button>
-        <button onclick="switchTab('menu')" id="tab-menu" class="tab-btn border-transparent text-slate-500 hover:text-slate-700 font-medium whitespace-nowrap py-4 px-1 border-b-2 text-sm flex items-center space-x-2">
-          <i class="fa-solid fa-calendar-week"></i>
-          <span>2. Menu de la Semaine</span>
-          <span id="menu-badge-tab" class="ml-1.5 bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-        </button>
-        <button onclick="switchTab('grocery')" id="tab-grocery" class="tab-btn border-transparent text-slate-500 hover:text-slate-700 font-medium whitespace-nowrap py-4 px-1 border-b-2 text-sm flex items-center space-x-2">
-          <i class="fa-solid fa-basket-shopping"></i>
-          <span>3. Liste d'Épicerie</span>
-        </button>
-      </nav>
+    <div id="counter" class="counter">Repas sélectionnés : <span id="selected-count">0</span> / 5</div>
+
+    <!-- Catalogue de choix -->
+    <div id="tab-catalog">
+        <div id="catalog-grid" class="grid"></div>
     </div>
-  </div>
 
-  <!-- MAIN CONTENT CONTAINER -->
-  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-    <!-- ==================== TAB 1: CATALOGUE OF 30 MEALS ==================== -->
-    <section id="view-catalog" class="tab-view space-y-6">
-      
-      <!-- Filters & Search -->
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div class="relative w-full md:w-80">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-          <input type="text" id="search-input" oninput="filterRecipes()" placeholder="Rechercher un plat, ingrédient..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
-        </div>
-
-        <!-- Category Filters -->
-        <div class="flex items-center space-x-2 overflow-x-auto w-full md:w-auto no-scrollbar pb-1 md:pb-0">
-          <button onclick="setCategoryFilter('all')" class="cat-filter-btn active bg-brand-600 text-white text-xs font-semibold px-3 py-2 rounded-xl whitespace-nowrap transition-all">Tous</button>
-          <button onclick="setCategoryFilter('tacos')" class="cat-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl whitespace-nowrap transition-all">🌮 Tacos & Mexicain</button>
-          <button onclick="setCategoryFilter('burgers')" class="cat-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl whitespace-nowrap transition-all">🍔 Burgers & Sandwichs</button>
-          <button onclick="setCategoryFilter('viandes')" class="cat-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl whitespace-nowrap transition-all">🥩 Viandes & Poulet</button>
-          <button onclick="setCategoryFilter('poissons')" class="cat-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl whitespace-nowrap transition-all">🐟 Poissons & Mer</button>
-          <button onclick="setCategoryFilter('vege')" class="cat-filter-btn bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl whitespace-nowrap transition-all">🌱 Végé & Asiatique</button>
-        </div>
-      </div>
-
-      <!-- Helper Banner -->
-      <div id="selection-banner" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm shrink-0">
-            <i class="fa-solid fa-lightbulb"></i>
-          </div>
-          <p class="text-xs sm:text-sm text-amber-900 font-medium">
-            Sélectionnez <span class="font-bold">5 repas</span> pour composer votre semaine. Une fois prêts, votre menu visuel et votre liste d'épicerie seront générés automatiquement.
-          </p>
-        </div>
-        <button onclick="clearSelection()" class="text-xs font-bold text-amber-800 hover:text-amber-900 underline shrink-0 ml-2">Effacer tout</button>
-      </div>
-
-      <!-- Recipes Grid -->
-      <div id="recipes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Rendered by JavaScript -->
-      </div>
-    </section>
-
-    <!-- ==================== TAB 2: WEEKLY MENU ==================== -->
-    <section id="view-menu" class="tab-view hidden space-y-6">
-      
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 class="text-xl font-bold text-slate-900">Votre Menu de la Semaine</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Cliquez sur n'importe quel plat ci-dessous pour ouvrir sa fiche recette complète.</p>
-        </div>
-        <div class="flex items-center space-x-3 no-print">
-          <button onclick="window.print()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center space-x-2">
-            <i class="fa-solid fa-print"></i>
-            <span>Imprimer le Menu</span>
-          </button>
-          <button onclick="switchTab('grocery')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center space-x-2">
-            <span>Voir la Liste d'Épicerie</span>
-            <i class="fa-solid fa-arrow-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Empty State -->
-      <div id="menu-empty-state" class="hidden text-center py-16 bg-white rounded-3xl border-2 border-dashed border-slate-200 p-8">
-        <div class="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center text-brand-500 text-2xl mx-auto mb-4">
-          <i class="fa-solid fa-utensils"></i>
-        </div>
-        <h3 class="text-lg font-bold text-slate-800 mb-1">Aucun repas sélectionné</h3>
-        <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">Allez dans la banque de recettes pour choisir vos 5 repas préférés pour la semaine.</p>
-        <button onclick="switchTab('catalog')" class="bg-brand-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-brand-700">Choisir mes repas</button>
-      </div>
-
-      <!-- Visual Menu Cards Grid -->
-      <div id="menu-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Rendered by JS -->
-      </div>
-    </section>
-
-    <!-- ==================== TAB 3: GROCERY LIST ==================== -->
-    <section id="view-grocery" class="tab-view hidden space-y-6">
-      
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h2 class="text-xl font-bold text-slate-900">Liste d'Épicerie Consolidée</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Triée exactement dans l'ordre de vos allées d'épicerie pour un magasinage rapide.</p>
-        </div>
-        <div class="flex items-center space-x-2 no-print">
-          <button onclick="copyGroceryToClipboard()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5">
-            <i class="fa-solid fa-copy"></i>
-            <span>Copier la texte</span>
-          </button>
-          <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md flex items-center space-x-1.5">
-            <i class="fa-solid fa-print"></i>
-            <span>Imprimer la liste</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Empty Grocery State -->
-      <div id="grocery-empty-state" class="hidden text-center py-16 bg-white rounded-3xl border-2 border-dashed border-slate-200 p-8">
-        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 text-2xl mx-auto mb-4">
-          <i class="fa-solid fa-basket-shopping"></i>
-        </div>
-        <h3 class="text-lg font-bold text-slate-800 mb-1">Votre liste est vide</h3>
-        <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">Sélectionnez au moins 1 repas dans la banque de recettes pour générer automatiquement votre liste de magasinage.</p>
-        <button onclick="switchTab('catalog')" class="bg-brand-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-brand-700">Sélectionner mes repas</button>
-      </div>
-
-      <!-- Grocery Sections Container -->
-      <div id="grocery-sections-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Rendered by JS -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- RECIPE MODAL DETAIL -->
-  <div id="recipe-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100 transform transition-all">
-      
-      <!-- Modal Header with Image -->
-      <div class="relative h-60 sm:h-72 w-full bg-slate-100 shrink-0">
-        <img id="modal-img" src="" alt="" class="w-full h-full object-cover">
-        <button onclick="closeModal()" class="absolute top-4 right-4 bg-slate-900/70 hover:bg-slate-900 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent p-6 text-white">
-          <span id="modal-cat-badge" class="bg-brand-600 text-white text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full"></span>
-          <h2 id="modal-title" class="text-2xl font-extrabold mt-1 text-white"></h2>
-          <div class="flex items-center space-x-4 mt-2 text-xs text-slate-200">
-            <span><i class="fa-regular fa-clock mr-1"></i> <span id="modal-time"></span></span>
-            <span><i class="fa-solid fa-fire mr-1"></i> Mode Plancha : <span id="modal-heat" class="font-bold text-amber-300"></span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal Body (Scrollable) -->
-      <div class="p-6 overflow-y-auto space-y-6 flex-grow">
-        <!-- Description -->
-        <p id="modal-desc" class="text-sm text-slate-600 italic border-l-4 border-brand-500 pl-3 py-1 bg-slate-50 rounded-r-lg"></p>
-
-        <!-- Ingredients list -->
-        <div>
-          <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center">
-            <i class="fa-solid fa-basket-shopping text-brand-600 mr-2"></i> Ingrédients nécessaires
-          </h3>
-          <ul id="modal-ingredients" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
-            <!-- Rendered JS -->
-          </ul>
-        </div>
-
-        <hr class="border-slate-100">
-
-        <!-- Cooking Steps for Plancha -->
-        <div>
-          <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center">
-            <i class="fa-solid fa-fire-burner text-brand-600 mr-2"></i> Étapes de Cuisson sur Plancha
-          </h3>
-          <ol id="modal-steps" class="space-y-3 text-xs sm:text-sm text-slate-700">
-            <!-- Rendered JS -->
-          </ol>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center shrink-0">
-        <button id="modal-toggle-select-btn" onclick="" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md">
-          Ajouter au menu
-        </button>
-        <button onclick="closeModal()" class="text-xs font-semibold text-slate-500 hover:text-slate-800 px-4 py-2">
-          Fermer
-        </button>
-      </div>
-
+    <!-- Menu de la semaine -->
+    <div id="tab-menu" class="hidden">
+        <h2>Votre Menu Hebdomadaire</h2>
+        <p><em>Cliquez sur l'image d'un plat pour afficher sa recette.</em></p>
+        <div id="menu-grid" class="grid"></div>
     </div>
-  </div>
 
-  <!-- FOOTER -->
-  <footer class="bg-white border-t border-slate-200 py-6 mt-auto no-print">
-    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-      <p>PlanchaMaster App &copy; 2026 - Conçu pour vos soupers d'été et grillades quotidiennes.</p>
+    <!-- Liste d'épicerie -->
+    <div id="tab-grocery" class="hidden">
+        <h2>Votre Liste d'Épicerie Organisée</h2>
+        <div id="grocery-container"></div>
     </div>
-  </footer>
+</div>
 
-  <!-- JAVASCRIPT APP LOGIC -->
-  <script>
-    // ==========================================
-    // 30 RECIPES DATABASE WITH PLANCHA STEPS & SECTIONS
-    // ==========================================
-    const recipesData = [
-      {
+<!-- Modal Recette -->
+<div id="recipe-modal" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+        <h2 id="modal-title"></h2>
+        <img id="modal-img" style="width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:15px;" src="" alt="">
+        <h3>Ingrédients</h3>
+        <ul id="modal-ingredients"></ul>
+        <h3>Instructions sur Plancha</h3>
+        <p id="modal-instructions"></p>
+    </div>
+</div>
+
+<script>
+const meals = [
+    {
         id: 1,
         title: "Tacos al Pastor",
-        category: "tacos",
-        prepTime: "25 min",
-        heat: "Zone forte + zone moyenne",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/11230599135682837290_0",
-        description: "Porc mariné aux épices mexicaines et tranches d'ananas frais dorées à souhait sur la plancha.",
+        category: "Tacos & Mexicain",
+        img: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=500&q=80",
         ingredients: {
-          fruits_legumes: ["Ananas frais (1/2)", "Oignon rouge (1)", "Limes (2)", "Coriandre fraîche (1 botte)"],
-          viandes_poissons: ["Épaule ou filet de porc émincé (600g)"],
-          non_perissable: ["Tortillas de maïs (12)", "Pâte d'achiote ou chili en poudre", "Cumin, ail en poudre"],
-          produits_laitiers: [],
-          surgeles: []
+            "Viandes": ["600g porc (échine) mince"],
+            "Fruits/Légumes": ["1/2 ananas frais", "1 oignon rouge", "Coriandre fraîche", "Limes"],
+            "NonPérissables": ["Tortillas de maïs", "Épices achiote / chili"],
+            "ProduitsLaitiers": [],
+            "Surgelés": []
         },
-        steps: [
-          "Faire mariner le porc émincé 30 min avec les épices achiote, jus de lime et ail.",
-          "Chauffer la plancha : un côté à feu vif, un côté à feu moyen.",
-          "Saisir les tranches d'ananas sur la zone vive jusqu'à obtenir de belles marques de grillade, puis hacher.",
-          "Cuire le porc émincé sur la zone vive en remuant avec la spatule jusqu'à ce qu'il soit bien doré et croustillant.",
-          "Chauffer les tortillas de maïs sur la zone tiède pendant 30 secondes de chaque côté.",
-          "Garnir les tortillas de porc, ananas, oignon rouge haché, coriandre et un trait de jus de lime."
-        ]
-      },
-      {
+        instructions: "Faire griller le porc mariné sur zone très chaude. Griller les tranches d'ananas jusqu'à caramélisation. Réchauffer les tortillas sur la plancha. Assembler avec coriandre et lime."
+    },
+    {
         id: 2,
-        title: "Tacos au Poulet Lime & Coriandre",
-        category: "tacos",
-        prepTime: "20 min",
-        heat: "Zone moyenne-forte",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/16082770892320985594_0",
-        description: "Lanières de poulet juiteuses saisies avec poivrons, oignons et assaisonnement mexicain.",
+        title: "Smash Burgers Double",
+        category: "Burgers & Sandwichs",
+        img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80",
         ingredients: {
-          fruits_legumes: ["Poivrons colorés (2)", "Oignon jaune (1)", "Limes (2)", "Avocat (1)"],
-          viandes_poissons: ["Poitrines de poulet (500g)"],
-          non_perissable: ["Tortillas de blé ou maïs (10)", "Épices à tacos", "Huile d'olive"],
-          produits_laitiers: ["Crème sure (1/2 pot)", "Fromage Monterey Jack râpé (100g)"],
-          surgeles: []
+            "Viandes": ["600g bœuf haché 80/20"],
+            "Fruits/Légumes": ["1 oignon jaune émincé", "Laitue", "Tomate"],
+            "NonPérissables": ["4 pains briochés", "Sauce burger", "Cornichons"],
+            "ProduitsLaitiers": ["8 tranches de fromage American/Cheddar", "Beurre"],
+            "Surgelés": []
         },
-        steps: [
-          "Émincer le poulet, les poivrons et l'oignon en lanières régulières.",
-          "Huiler légèrement la plancha préchauffée à feu moyen-fort.",
-          "Déposer d'un côté les poivrons et oignons, et de l'autre le poulet.",
-          "Faire sauter le poulet jusqu'à cuisson complète (6-8 min) et faire caraméliser les légumes.",
-          "Mélanger le tout avec la spatule, saupoudrer d'épices à tacos et arroser de jus de lime.",
-          "Servir dans les tortillas chaudes avec tranches d'avocat et crème sure."
-        ]
-      },
-      {
+        instructions: "Former 8 boules de bœuf. Écraser très fermement sur plancha très chaude. Ajouter les oignons émincés sous la viande. Mettre le fromage, empiler 2 boulettes et toaster les pains avec du beurre."
+    },
+    {
         id: 3,
-        title: "Tacos Carnitas Croustillants",
-        category: "tacos",
-        prepTime: "15 min (si porc pré-cuit)",
-        heat: "Zone très forte",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/11230599135682837290_0",
-        description: "Effiloché de porc saisi sur plancha très chaude pour obtenir des bords irrésistiblement croustillants.",
+        title: "Bavette Chimichurri",
+        category: "Steaks & Grills",
+        img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80",
         ingredients: {
-          fruits_legumes: ["Oignon blanc (1)", "Coriandre fraîche (1/2 botte)", "Limes (2)"],
-          viandes_poissons: ["Porc effiloché (Carnitas cuites 600g)"],
-          non_perissable: ["Tortillas de maïs (12)", "Sauce salsa verde en pot"],
-          produits_laitiers: ["Fromage Cotija ou Feta émietté (80g)"],
-          surgeles: []
+            "Viandes": ["600g bavette de bœuf"],
+            "Fruits/Légumes": ["Persil frais", "Ail", "Asperges"],
+            "NonPérissables": ["Huile d'olive", "Vinaigre de vin rouge"],
+            "ProduitsLaitiers": [],
+            "Surgelés": []
         },
-        steps: [
-          "Chauffer la plancha à haute température avec un filet d'huile.",
-          "Étaler le porc effiloché en couche mince sur la plaque sans le toucher pendant 3-4 minutes pour former une croûte.",
-          "Retourner et mélanger pour caraméliser l'ensemble de la viande.",
-          "Réchauffer les tortillas à côté.",
-          "Dresser les tacos avec la viande croustillante, oignon cru dés, coriandre et salsa verde."
-        ]
-      },
-      {
+        instructions: "Saisir la bavette 3-4 min par côté à feu vif. Saisir les asperges à côté avec huile et sel. Servir la viande tranchée contre le grain nappée de sauce chimichurri maison."
+    },
+    {
         id: 4,
-        title: "Tacos de Poisson Grillé & Chou Croquant",
-        category: "tacos",
-        prepTime: "20 min",
-        heat: "Zone moyenne",
-        image: "https://images.unsplash.com/photo-1512838243191-e81e8f66f1fd?auto=format&fit=crop&w=600&q=80",
-        description: "Filets de poisson blanc grillés à la plancha servis sur salade de chou acidulée et mayo chipotle.",
+        title: "Fajitas au Poulet",
+        category: "Tacos & Mexicain",
+        img: "https://images.unsplash.com/photo-1534352956036-cd2d588814d4?w=500&q=80",
         ingredients: {
-          fruits_legumes: ["Chou rouge (1/4)", "Lime (2)", "Coriandre (1/2 botte)"],
-          viandes_poissons: ["Filets de cabillaud ou d'aiglefin (500g)"],
-          non_perissable: ["Tortillas de maïs (10)", "Mayonnaise", "Piment chipotle en sauce en conserve"],
-          produits_laitiers: [],
-          surgeles: []
+            "Viandes": ["500g poitrines de poulet"],
+            "Fruits/Légumes": ["3 poivrons de couleurs", "1 gros oignon"],
+            "NonPérissables": ["Tortillas de blé", "Mélange d'épices fajitas"],
+            "ProduitsLaitiers": ["Crème sure", "Fromage râpé"],
+            "Surgelés": []
         },
-        steps: [
-          "Préparer la salade de chou émincé fine avec jus de lime et mayonnaise au chipotle.",
-          "Assaisonner le poisson avec cumin, sel et paprika.",
-          "Huiler la plancha et déposer délicatement les filets de poisson sur la zone moyenne.",
-          "Cuire 3 à 4 min de chaque côté en manipulant avec précaution à l'aide d'une large spatule.",
-          "Émietter grossièrement le poisson grillé dans les tortillas chaudes garnies du chou croquant."
-        ]
-      },
-      {
+        instructions: "Griller les lanières de poulet et les légumes à feu moyen-vif pendant 8-10 minutes. Mélanger avec les épices. Servir chaud dans des tortillas chauffées."
+    },
+    {
         id: 5,
-        title: "Fajitas au Bœuf & Piments Grillés",
-        category: "tacos",
-        prepTime: "20 min",
-        heat: "Zone forte",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/245730577208117465_0",
-        description: "Bavette ou jupe de bœuf saisie saignante puis tranchée, servie avec légumes fondants.",
+        title: "Saumon Unilatéral",
+        category: "Poissons",
+        img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&q=80",
         ingredients: {
-          fruits_legumes: ["Poivron rouge (1)", "Poivron vert (1)", "Oignons jaunes (2)", "Limes (2)"],
-          viandes_poissons: ["Bavette de bœuf (600g)"],
-          non_perissable: ["Tortillas de blé grands formats (8)", "Huile d'olive", "Épices fajitas"],
-          produits_laitiers: ["Fromage râpé tex-mex (150g)", "Crème sure (1 pot)"],
-          surgeles: []
+            "Viandes": ["4 pavés de saumon avec peau"],
+            "Fruits/Légumes": ["Courgettes", "Citrons"],
+            "NonPérissables": ["Huile d'olive", "Aneth"],
+            "ProduitsLaitiers": [],
+            "Surgelés": []
         },
-        steps: [
-          "Masser la bavette avec huile, jus de lime et épices fajitas.",
-          "Sur la plancha très chaude, saisir les poivrons et oignons émincés en les remuant souvent.",
-          "Saisir la bavette 3 minutes par face pour une cuisson saignante/médium.",
-          "Lisser reposer la viande 5 min sur une planche puis la trancher contre le grain en fines lanières.",
-          "Mélanger la viande et les légumes sur la plancha chaude quelques secondes et servir aussitôt."
-        ]
-      },
-      {
+        instructions: "Poser les pavés côté peau sur feu moyen. Laisser cuire à 80% sans les retourner pour une peau ultra-croustillante. Cuire les tranches de courgettes à côté."
+    },
+    {
         id: 6,
-        title: "Quesadillas au Poulet & Jalapeños",
-        category: "tacos",
-        prepTime: "15 min",
-        heat: "Zone moyenne-douce",
-        image: "https://images.unsplash.com/photo-1618040996337-56904b7850b9?auto=format&fit=crop&w=600&q=80",
-        description: "Tortillas dorées et croustillantes remplies de fromage fondu, poulet grillé et piments.",
+        title: "Tofu Grillé Teriyaki",
+        category: "Végétarien",
+        img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80",
         ingredients: {
-          fruits_legumes: ["Piment jalapeño frais (1)", "Coriandre"],
-          viandes_poissons: ["Restes de poulet cuit ou poitrines (300g)"],
-          non_perissable: ["Grands tortillas de blé (6)", "Salsa"],
-          produits_laitiers: ["Fromage Cheddar fort & Mozzarella râpés (200g)", "Beurre"],
-          surgeles: []
+            "Viandes": ["2 blocs de tofu ferme"],
+            "Fruits/Légumes": ["Bok choy", "Gingembre frais"],
+            "NonPérissables": ["Sauce teriyaki", "Graines de sésame", "Riz basmati"],
+            "ProduitsLaitiers": [],
+            "Surgelés": []
         },
-        steps: [
-          "Beurrer un côté de chaque tortilla.",
-          "Poser les tortillas côté beurré sur la plancha chaude à feu moyen.",
-          "Déposer le fromage, le poulet cuit émincé, les jalapeños en rondelles sur une moitié de la tortilla.",
-          "Rabattre la tortilla en demi-lune et presser doucement avec la spatule.",
-          "Cuire 2-3 min de chaque côté jusqu'à ce que la tortilla soit dorée et le fromage bien fondu."
-        ]
-      },
-      {
-        id: 7,
-        title: "Smash Burgers Double Cheese",
-        category: "burgers",
-        prepTime: "15 min",
-        heat: "Zone maximale",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/526847083013941426_0",
-        description: "Boulettes de bœuf écrasées ultra-fines sur la plancha pour une croûte caramélisée incomparable.",
-        ingredients: {
-          fruits_legumes: ["Oignon jaune émincé très fin (1)", "Laitue", "Tomate (1)"],
-          viandes_poissons: ["Bœuf haché 80/20 (600g formé en 8 boules)"],
-          non_perissable: ["Pains à burger briochés (4)", "Cornichons à burger", "Sauce burger spéciale"],
-          produits_laitiers: ["Tranches de fromage American ou Cheddar (8)", "Beurre"],
-          surgeles: ["Frites de pommes de terre (1 sac)"]
-        },
-        steps: [
-          "Chauffer la plancha à la température maximale.",
-          "Toasté les pains briochés beurrés sur la plancha et réserver.",
-          "Poser les boules de bœuf sur la plaque ultra chaude et poser une poignée d'oignons émincés par-dessus.",
-          "Écraser vigoureusement avec une presse à burger ou une spatule rigide pour obtenir une galette très fine.",
-          "Cuire 2 min jusqu'à apparition d'une croûte brune, gratter et retourner. Poser le fromage immédiatement.",
-          "Empiler deux galettes par pain et servir chaud avec les frites."
-        ]
-      },
-      {
-        id: 8,
-        title: "Burgers de Dinde, Pesto & Provolone",
-        category: "burgers",
-        prepTime: "20 min",
-        heat: "Zone moyenne",
-        image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80",
-        description: "Une alternative savoureuse et juteuse avec fromage provolone fondant et pesto basilic.",
-        ingredients: {
-          fruits_legumes: ["Rquette ou bébé épinards", "Tomates séchées"],
-          viandes_poissons: ["Dinde hachée (500g)"],
-          non_perissable: ["Pains ciabatta ou burger (4)", "Pesto au basilic en pot"],
-          produits_laitiers: ["Tranches de fromage Provolone (4)", "Parmesan râpé (30g)"],
-          surgeles: []
-        },
-        steps: [
-          "Mélanger la dinde hachée avec le parmesan, du sel et du poivre. Former 4 galettes.",
-          "Huiler la plancha préchauffée à feu moyen.",
-          "Saisir les burgers de dinde environ 5-6 min de chaque côté (cuisson à cœur requise).",
-          "Déposer le provolone sur chaque galette en fin de cuisson et couvrir d'une cloche à vapeur 1 min pour fondre.",
-          "Napper les pains de pesto, ajouter le burger et la roquette."
-        ]
-      },
-      {
-        id: 9,
-        title: "Burgers de Saumon & Sauce Aneth-Citron",
-        category: "burgers",
-        prepTime: "20 min",
-        heat: "Zone moyenne",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/1370335501238027595_0",
-        description: "Galettes de saumon frais grillées servies dans un pain moelleux avec sauce fraîche à l'aneth.",
-        ingredients: {
-          fruits_legumes: ["Concombre en rondelles (1/2)", "Citron (1)", "Aneth frais"],
-          viandes_poissons: ["Pavés de saumon frais hachés au couteau (500g)"],
-          non_perissable: ["Pains kaiser ou briochés (4)", "Chapelure panko (50g)"],
-          produits_laitiers: ["Yogourt grec nature ou crème sure (150g)"],
-          surgeles: []
-        },
-        steps: [
-          "Mélanger le saumon haché, l'aneth, la chapelure panko, sel et zestes de citron. Former 4 galettes épaisses.",
-          "Déposer la sauce fraîche (yogourt, aneth, jus de citron, sel) au frigo.",
-          "Cuire les galettes de saumon sur la plancha huilée à feu moyen 4 min par côté.",
-          "Dorer les pains sur la plancha.",
-          "Monter les burgers avec la sauce, le concombre croquant et la galette de saumon."
-        ]
-      },
-      {
-        id: 10,
-        title: "Philly Cheesesteak sur Plancha",
-        category: "burgers",
-        prepTime: "20 min",
-        heat: "Zone forte",
-        image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80",
-        description: "Le classique de Philadelphie : fin bœuf émincé sauté aux poivrons et recouvert de fromage fondu.",
-        ingredients: {
-          fruits_legumes: ["Poivron vert (1)", "Oignons jaunes (2)"],
-          viandes_poissons: ["Faux-filet ou contre-filet de bœuf très finement tranché (500g)"],
-          non_perissable: ["Pains sous-marins ou baguettes molles (3-4)"],
-          produits_laitiers: ["Provolone ou fromage américain fondu (150g)", "Beurre"],
-          surgeles: []
-        },
-        steps: [
-          "Faire revenir les oignons et poivrons émincés sur la plancha avec du beurre jusqu'à ce qu'ils soient tendres.",
-          "Sur la zone vive, saisir la viande très fine en la séparant avec la spatule.",
-          "Mélanger la viande et les légumes sautés, former des portions allongées de la taille des pains.",
-          "Couvrir chaque portion de tranches de fromage. Poser le pain ouvert par-dessus pour capturer la vapeur.",
-          "Glisser la spatule sous la viande et retourner le tout directement dans le pain."
-        ]
-      },
-      {
-        id: 11,
-        title: "Sandwich Cubano Pressé",
-        category: "burgers",
-        prepTime: "15 min",
-        heat: "Zone moyenne + presse",
-        image: "https://images.unsplash.com/photo-1539252554453-80ab65ce3586?auto=format&fit=crop&w=600&q=80",
-        description: "Sandwich chaud pressé garni de porc rôti, jambon, fromage suisse et cornichons.",
-        ingredients: {
-          fruits_legumes: ["Cornichons à l'aneth tranchés dans la longueur"],
-          viandes_poissons: ["Jambon blanc cuit (200g)", "Porc rôti tranché (200g)"],
-          non_perissable: ["Pain cubain ou baguette espagnole (2)", "Moutarde jaune"],
-          produits_laitiers: ["Tranches de fromage Suisse ou Emmental (150g)", "Beurre"],
-          surgeles: []
-        },
-        steps: [
-          "Ouvrir les pains en deux et tartiner de moutarde jaune.",
-          "Garnir dans l'ordre : fromage suisse, porc rôti, jambon, cornichons et encore du fromage suisse.",
-          "Beurrer généreusement l'extérieur des pains.",
-          "Poser les sandwichs sur la plancha à feu moyen et appliquer une lourde presse à grillades ou une fonte.",
-          "Presser et griller environ 4-5 min de chaque côté jusqu'à ce que le pain soit croustillant et le fromage coulant."
-        ]
-      },
-      {
-        id: 12,
-        title: "Grilled Cheese Oignons Confits & Bacon",
-        category: "burgers",
-        prepTime: "20 min",
-        heat: "Zone douce-moyenne",
-        image: "https://images.unsplash.com/photo-1528736235302-52922df5c122?auto=format&fit=crop&w=600&q=80",
-        description: "Un grilled cheese réconfortant avec oignons caramélisés à la plancha et bacon croustillant.",
-        ingredients: {
-          fruits_legumes: ["Grands oignons jaunes (2)"],
-          viandes_poissons: ["Tranches de bacon (8)"],
-          non_perissable: ["Pain de campagne épais (8 tranches)"],
-          produits_laitiers: ["Fromage Cheddar vieilli & Gouda (200g)", "Beurre"],
-          surgeles: []
-        },
-        steps: [
-          "Faire griller le bacon sur la plancha jusqu'à ce qu'il soit croustillant.",
-          "Déplacer le bacon et faire caraméliser lentement les oignons dans le gras de bacon pendant 10 min.",
-          "Beurrer les tranches de pain sur la face extérieure.",
-          "Assembler le sandwich avec cheddar, oignons confits, bacon et gouda.",
-          "Griller doucement sur la plancha jusqu'à dorure parfaite des deux côtés."
-        ]
-      },
-      {
-        id: 13,
-        title: "Bavette Chimichurri & Légumes Grillés",
-        category: "viandes",
-        prepTime: "25 min",
-        heat: "Zone forte",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/245730577208117465_0",
-        description: "Bavette de bœuf saisie à haute température servie avec une sauce chimichurri maison aux herbes.",
-        ingredients: {
-          fruits_legumes: ["Persil plat (1 botte)", "Coriandre", "Courgettes (2)", "Poivron rouge (1)", "Ail"],
-          viandes_poissons: ["Bavette de bœuf (600g)"],
-          non_perissable: ["Huile d'olive extra-vierge", "Vinaigre de vin rouge", "Flocons de piment"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Préparer la sauce chimichurri : hacher persil, coriandre, ail, mélanger avec huile, vinaigre, sel et piment.",
-          "Trancher les courgettes et poivrons en bandes.",
-          "Sur la plancha très chaude, saisir les légumes avec un trait d'huile d'olive.",
-          "Saisir la bavette 3-4 minutes de chaque côté pour une cuisson saignante idéale.",
-          "Laisser reposer la viande 5 min avant de la trancher et de la napper généreusement de chimichurri."
-        ]
-      },
-      {
-        id: 14,
-        title: "Poulet Souvlaki & Pitas Grillés",
-        category: "viandes",
-        prepTime: "20 min (+ marinade)",
-        heat: "Zone moyenne",
-        image: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=600&q=80",
-        description: "Cubes de poulet marinés à l'origan, citron et ail, servis avec sauce tzatziki fraîche.",
-        ingredients: {
-          fruits_legumes: ["Citrons (2)", "Concombre (1)", "Ail", "Tomates (2)", "Oignon rouge (1)"],
-          viandes_poissons: ["Poitrines de poulet en cubes (600g)"],
-          non_perissable: ["Pains pita (4-6)", "Origan séché", "Huile d'olive"],
-          produits_laitiers: ["Yogourt grec (250g)"],
-          surgeles: []
-        },
-        steps: [
-          "Mariner le poulet dans huile d'olive, jus de citron, ail haché et origan.",
-          "Préparer le tzatziki : râper le concombre, l'égoutter et le mélanger avec le yogourt grec et l'ail.",
-          "Enfiler le poulet sur des brochettes ou le poser directement sur la plancha chaude.",
-          "Cuire 8-10 minutes en retournant régulièrement avec la spatule.",
-          "Réchauffer les pitas 1 min sur la plancha et garnir de poulet, tomates, oignon rouge et tzatziki."
-        ]
-      },
-      {
-        id: 15,
-        title: "Poulet Cajun & Maïs Grillé sur l'Épi",
-        category: "viandes",
-        prepTime: "25 min",
-        heat: "Zone moyenne-forte",
-        image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80",
-        description: "Hauts de cuisses de poulet épicés Cajun accompagnés d'épis de maïs dorés au beurre.",
-        ingredients: {
-          fruits_legumes: ["Épis de maïs frais (4)", "Limes (2)", "Coriandre"],
-          viandes_poissons: ["Hauts de cuisses de poulet désossés (600g)"],
-          non_perissable: ["Mélange d'épices Cajun", "Huile d'olive"],
-          produits_laitiers: ["Beurre (50g)"],
-          surgeles: []
-        },
-        steps: [
-          "Enrober le poulet d'épices Cajun et un filet d'huile.",
-          "Précuire les épis de maïs 5 min dans l'eau bouillante.",
-          "Badigeonner le maïs de beurre et le faire rouler sur la plancha chaude pour le griller de tous les côtés.",
-          "Saisir le poulet Cajun 6-7 min par côté sur la zone forte jusqu'à ce qu'il soit bien doré.",
-          "Servir avec des quartiers de lime et du beurre fondu sur le maïs."
-        ]
-      },
-      {
-        id: 16,
-        title: "Côtelettes d'Agneau aux Herbes de Provence",
-        category: "viandes",
-        prepTime: "15 min",
-        heat: "Zone forte",
-        image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",
-        description: "Côtelettes d'agneau tender saisies rapidement avec ail, romarin et herbes méditerranéennes.",
-        ingredients: {
-          fruits_legumes: ["Asperges vertes (1 botte)", "Ail (3 gousses)", "Citron (1)"],
-          viandes_poissons: ["Côtelettes d'agneau (8 à 10 pièces)"],
-          non_perissable: ["Herbes de Provence", "Huile d'olive extra-vierge", "Fleur de sel"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Masser l'agneau avec huile d'olive, ail écrasé et herbes de Provence.",
-          "Saisir les asperges sur la plancha à feu moyen avec un filet d'eau et d'huile pendant 6-8 min.",
-          "Poser les côtelettes d'agneau sur la zone très chaude de la plancha.",
-          "Saisir 2 à 3 minutes par face pour conserver une viande rosée et jus de cuisson savoureux.",
-          "Terminer par un jet de jus de citron et une pincée de fleur de sel."
-        ]
-      },
-      {
-        id: 17,
-        title: "Saucisses Italiennes & Poivrons Sautés",
-        category: "viandes",
-        prepTime: "20 min",
-        heat: "Zone moyenne",
-        image: "https://images.unsplash.com/photo-1597289124948-688c1a35cb48?auto=format&fit=crop&w=600&q=80",
-        description: "Un grand classique sur plancha : saucisses dorées avec poivrons doux et oignons caramélisés.",
-        ingredients: {
-          fruits_legumes: ["Poivrons rouges et jaunes (3)", "Oignons doux (2)"],
-          viandes_poissons: ["Saucisses italiennes douces ou piquantes (6)"],
-          non_perissable: ["Pains à sous-marin (optonnel)", "Huile d'olive"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Piquer légèrement les saucisses et les poser sur la zone moyenne de la plancha.",
-          "À côté, faire sauter les poivrons et oignons émincés en lamelles.",
-          "Faire rouler régulièrement les saucisses pour une cuisson uniforme (environ 12-15 min).",
-          "Mélanger les légumes sautés avec le jus rendu par les saucisses sur la plaque.",
-          "Servir les saucisses entières ou tranchées sur le lit de poivrons fondants."
-        ]
-      },
-      {
-        id: 18,
-        title: "Paillard de Poulet au Citron & Câpres",
-        category: "viandes",
-        prepTime: "15 min",
-        heat: "Zone forte",
-        image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80",
-        description: "Escalopes de poulet très fines saisies en 3 minutes avec une sauce acidulée aux câpres.",
-        ingredients: {
-          fruits_legumes: ["Citrons (2)", "Persil frais"],
-          viandes_poissons: ["Poitrines de poulet aplaties très fines (Paillards 4)"],
-          non_perissable: ["Câpres en bocal (2 c. à soupe)", "Huile d'olive", "Farine (2 c. à soupe)"],
-          produits_laitiers: ["Beurre (40g)"],
-          surgeles: []
-        },
-        steps: [
-          "Aplatir les poitrines de poulet entre deux feuilles de papier cuisson pour les rendre ultra-fines.",
-          "Passer légèrement le poulet dans la farine.",
-          "Saisir sur la plancha très chaude 1 minute 30 de chaque côté.",
-          "Ajouter le beurre, les câpres et le jus de citron directement sur la plaque autour du poulet.",
-          "Napper le poulet du beurre noisette au citron et câpres avant de servir avec du persil."
-        ]
-      },
-      {
-        id: 19,
-        title: "Pavés de Saumon Unilatéral & Asperges",
-        category: "poissons",
-        prepTime: "15 min",
-        heat: "Zone moyenne-forte",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/1370335501238027595_0",
-        description: "Saumon cuit côté peau pour une texture ultra-croustillante et une chair fondante à cœur.",
-        ingredients: {
-          fruits_legumes: ["Asperges vertes (1 botte)", "Citron (1)", "Aneth"],
-          viandes_poissons: ["Pavés de saumon avec peau (4)"],
-          non_perissable: ["Huile d'olive", "Fleur de sel", "Poivre du moulin"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Sécher soigneusement la peau du saumon avec un essuie-tout et saler.",
-          "Huiler la plancha et poser les pavés côté peau en appuyant légèrement avec la spatule au début.",
-          "Laisser cuire à 80% uniquement côté peau (environ 7-8 min) sans y toucher jusqu'à ce que la chaleur remonte.",
-          "Cuire les asperges à côté sur la plancha.",
-          "Retourner le saumon seulement 30 secondes avant de servir pour sceller le dessus."
-        ]
-      },
-      {
-        id: 20,
-        title: "Crevettes à l'Ail, Lime & Tequila",
-        category: "poissons",
-        prepTime: "10 min",
-        heat: "Zone très forte",
-        image: "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=600&q=80",
-        description: "Crevettes géantes saisies en un éclair avec ail haché, piment et un jet de tequila.",
-        ingredients: {
-          fruits_legumes: ["Limes (2)", "Ail haché (4 gousses)", "Coriandre fraîche"],
-          viandes_poissons: ["Crevettes géantes décortiquées (500g)"],
-          non_perissable: ["Tequila (30ml - optionnel)", "Flocons de piment", "Huile d'olive"],
-          produits_laitiers: ["Beurre (30g)"],
-          surgeles: []
-        },
-        steps: [
-          "S'assurer que la plancha soit extrêmement chaude.",
-          "Jeter les crevettes et l'ail sur la plaque huilée.",
-          "Faire sauter vivement avec la spatule pendant 2 minutes jusqu'à ce qu'elles deviennent roses.",
-          "Ajouter le beurre, déglacer avec la tequila et le jus de lime (attention aux vapeurs!).",
-          "Parsémer de coriandre et servir immédiatement."
-        ]
-      },
-      {
-        id: 21,
-        title: "Steak de Thon Rouge Teriyaki",
-        category: "poissons",
-        prepTime: "10 min (+ marinade)",
-        heat: "Zone très forte",
-        image: "https://images.unsplash.com/photo-1501595091296-3aa970afb3ff?auto=format&fit=crop&w=600&q=80",
-        description: "Pavé de thon saisi très rapidement en surface pour conserver un cœur mi-cuit rosé.",
-        ingredients: {
-          fruits_legumes: ["Gingembre frais râpé", "Ciboulette ou oignon vert"],
-          viandes_poissons: ["Steaks de thon rouge frais (4)"],
-          non_perissable: ["Sauce Teriyaki", "Graines de sésame grillées", "Huile de sésame"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Badigeonner le thon de sauce teriyaki et graines de sésame.",
-          "Chauffer la plancha au maximum.",
-          "Saisir le thon 1 minute à 1 minute 30 par face seulement.",
-          "Le cœur doit rester cru/rosé (cuisson mi-cuite).",
-          "Trancher en tataki et arroser d'un filet d'huile de sésame et d'oignons verts."
-        ]
-      },
-      {
-        id: 22,
-        title: "Calmars Grillés au Persillade & Huile d'Olive",
-        category: "poissons",
-        prepTime: "10 min",
-        heat: "Zone maximale",
-        image: "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80",
-        description: "Anneaux ou tubes de calmars cuits à haute température pour une texture tendre et jamais caoutchouteuse.",
-        ingredients: {
-          fruits_legumes: ["Persil plat (1 botte)", "Ail (4 gousses)", "Citron (1)"],
-          viandes_poissons: ["Tubes de calmars frais nettoyés et quadrillés (500g)"],
-          non_perissable: ["Huile d'olive extra-vierge", "Piment d'Espelette"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Sécher parfaitement les calmars et les tailler en morceaux avec entailles en losanges.",
-          "Plancha chauffée au maximum.",
-          "Saisir les calmars sans trop surcharger la plaque pendant exactement 2 minutes.",
-          "Ajouter la persillade (persil et ail hachés) et le piment d'Espelette dans les 30 dernières secondes.",
-          "Terminer par un généreux jet de jus de citron."
-        ]
-      },
-      {
-        id: 23,
-        title: "Tofu Grillé Gingembre & Bok Choy",
-        category: "vege",
-        prepTime: "20 min",
-        heat: "Zone moyenne-forte",
-        image: "http://googleusercontent.com/image_collection/image_retrieval/5850474699023958074_0",
-        description: "Tranches de tofu ferme dorées et croustillantes servies sur bok choy braisé au soja.",
-        ingredients: {
-          fruits_legumes: ["Bok choy coupés en deux (4)", "Gingembre frais", "Ail"],
-          viandes_poissons: [],
-          non_perissable: ["Tofu extra-ferme (2 blocs de 350g)", "Sauce soja", "Sirop d'érable", "Huile de sésame"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Presser le tofu pour retirer l'excès d'eau et le couper en tranches d'un centimètre.",
-          "Mélanger sauce soja, sirop d'érable, gingembre râpé et huile de sésame.",
-          "Poser le tofu sur la plancha huilée et faire dorer 5 min par côté jusqu'à ce qu'il soit bien croustillant.",
-          "Cuire les demi bok choy côté coupé sur la plancha avec un peu d'eau sous une cloche à vapeur.",
-          "Badigeonner le tofu de sauce en fin de cuisson pour le caraméliser."
-        ]
-      },
-      {
-        id: 24,
-        title: "Riz Frit Teppanyaki Poulet & Légumes",
-        category: "vege",
-        prepTime: "20 min",
-        heat: "Zone forte",
-        image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=600&q=80",
-        description: "Riz sauté style spectacle japonais sur plancha avec petits légumes, œuf et sauce soja.",
-        ingredients: {
-          fruits_legumes: ["Carottes en petits dés (2)", "Oignons verts", "Ail"],
-          viandes_poissons: ["Poitrines de poulet en petits dés (300g)"],
-          non_perissable: ["Riz cuit de la veille refroidi (4 tasses)", "Sauce soja", "Huile de sésame"],
-          produits_laitiers: ["Œufs (3)", "Beurre (30g)"],
-          surgeles: ["Petits pois surgelés (1 tasse)"]
-        },
-        steps: [
-          "Faire sauter le poulet en dés avec les carottes et les pois surgelés sur la plancha.",
-          "Ajouter le riz froid et séparer les grains avec les deux spatules en travaillant énergiquement.",
-          "Créer un puits au centre, y casser les œufs et les brouiller avant de tout mélanger au riz.",
-          "Assaisonner avec beurre, sauce soja et huile de sésame.",
-          "Servir chaud garni d'oignons verts hachés."
-        ]
-      },
-      {
-        id: 25,
-        title: "Yakisoba Sautées aux Légumes & Crevettes",
-        category: "vege",
-        prepTime: "15 min",
-        heat: "Zone moyenne-forte",
-        image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80",
-        description: "Nouilles asiatiques sautées sur plancha avec chou, carottes, crevettes et sauce Yakisoba.",
-        ingredients: {
-          fruits_legumes: ["Chou vert émincé (2 tasses)", "Carotte en julienne (1)", "Oignon (1)"],
-          viandes_poissons: ["Crevettes décortiquées (300g)"],
-          non_perissable: ["Nouilles ramen cuites ou nouilles Yakisoba (400g)", "Sauce Yakisoba ou Worcestershire + soja"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Faire revenir les légumes émincés et les crevettes sur la plancha chaude.",
-          "Ajouter les nouilles précuites et mélanger le tout à l'aide des spatules.",
-          "Verser généreusement la sauce Yakisoba sur l'ensemble.",
-          "Faire sauter 3-4 minutes jusqu'à ce que les nouilles absorbent bien la sauce et grillent légèrement."
-        ]
-      },
-      {
-        id: 26,
-        title: "Halloumi Grillé & Légumes Méditerranéens",
-        category: "vege",
-        prepTime: "20 min",
-        heat: "Zone moyenne",
-        image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
-        description: "Tranches de fromage Halloumi doré accompagnées de courgettes, aubergines et tomates cerises.",
-        ingredients: {
-          fruits_legumes: ["Courgette (1)", "Petite aubergine (1)", "Tomates cerises (200g)", "Menthe fraîche"],
-          viandes_poissons: [],
-          non_perissable: ["Huile d'olive extra-vierge", "Réduction de vinaigre balsamique"],
-          produits_laitiers: ["Fromage Halloumi (2 paquets de 200g)"],
-          surgeles: []
-        },
-        steps: [
-          "Trancher le halloumi en tranches de 1 cm d'épaisseur. Trancher courgette et aubergine.",
-          "Griller les légumes sur la plancha avec de l'huile d'olive jusqu'à tendreté.",
-          "Déposer les tomates cerises jusqu'à ce qu'elles éclatent légèrement.",
-          "Saisir le halloumi sur la plancha bien chaude 2 min par côté jusqu'à obtenir une belle couleur dorée.",
-          "Dresser les légumes et le fromage, garnir de menthe et d'un filet de balsamique."
-        ]
-      },
-      {
-        id: 27,
-        title: "Brochettes Souvlaki de Porc & Courgettes",
-        category: "viandes",
-        prepTime: "20 min (+ marinade)",
-        heat: "Zone moyenne",
-        image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80",
-        description: "Porc mariné à l'huile d'olive, ail et origan grillé doucement sur la plancha.",
-        ingredients: {
-          fruits_legumes: ["Courgettes (2)", "Oignon rouge (1)", "Citron (1)"],
-          viandes_poissons: ["Filet de porc coupé en cubes (600g)"],
-          non_perissable: ["Huile d'olive", "Origan séché", "Pics à brochette"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Mariner le porc avec huile, jus de citron, ail écrasé et origan.",
-          "Monter les brochettes en alternant porc, courgettes et oignon rouge.",
-          "Poser les brochettes sur la plancha à feu moyen.",
-          "Tourner régulièrement pendant 10-12 minutes pour cuire uniformément sans brûler.",
-          "Servir chaud avec du riz ou une salade grecque."
-        ]
-      },
-      {
-        id: 28,
-        title: "Pizza Naan Cuite sur Plancha",
-        category: "burgers",
-        prepTime: "15 min",
-        heat: "Zone douce + cloche",
-        image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80",
-        description: "Une pizza rapide et croustillante utilisant du pain naan comme base, cuite avec cloche à vapeur.",
-        ingredients: {
-          fruits_legumes: ["Basilic frais", "Bébé épinards", "Tomates en dés"],
-          viandes_poissons: ["Pepperoni tranché ou prosciutto (100g)"],
-          non_perissable: ["Pains naan (4)", "Sauce pizza ou passata de tomate en bocal"],
-          produits_laitiers: ["Mozzarella fraîche en tranches ou râpée (200g)"],
-          surgeles: []
-        },
-        steps: [
-          "Griller légèrement le dessous des pains naan 1 min sur la plancha puis les retourner.",
-          "Étaler la sauce tomate sur le côté grillé, ajouter mozzarella et pepperoni.",
-          "Couvrir chaque naan d'une cloche à vapeur (ou un grand cul de poule inox).",
-          "Laisser cuire 3-4 minutes à feu doux jusqu'à ce que le fromage soit parfaitement fondu et la base croustillante."
-        ]
-      },
-      {
-        id: 29,
-        title: "Steaks de Thon Saumonés aux Câpres & Citron",
-        category: "poissons",
-        prepTime: "15 min",
-        heat: "Zone forte",
-        image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=600&q=80",
-        description: "Poisson savoureux saisi sur la plaque chaude, accompagné d'une sauce vierge au citron.",
-        ingredients: {
-          fruits_legumes: ["Citrons (2)", "Persil frais", "Tomates cerises (150g)"],
-          viandes_poissons: ["Filets de poisson à chair ferme (Truite ou Saumon 500g)"],
-          non_perissable: ["Câpres", "Huile d'olive extra-vierge"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Saisir le poisson sur la plancha très chaude huilée environ 3 minutes de chaque côté.",
-          "Faire sauter les tomates cerises à côté jusqu'à ce qu'elles flétrissent.",
-          "Mélanger jus de citron, câpres, persil haché et huile d'olive.",
-          "Verser la sauce vierge sur le poisson dès la sortie de la plancha."
-        ]
-      },
-      {
-        id: 30,
-        title: "Churrasco Picanha & Ananas Grillé",
-        category: "viandes",
-        prepTime: "20 min",
-        heat: "Zone très forte",
-        image: "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=600&q=80",
-        description: "Belles tranches de bœuf brésilien avec leur couche de gras croustillante et ananas au sucre vanillé.",
-        ingredients: {
-          fruits_legumes: ["Ananas frais (1/2)", "Limes (2)"],
-          viandes_poissons: ["Coupe de bœuf Picanha ou contre-filet avec gras (600g)"],
-          non_perissable: ["Gros sel de mer (Maldon)", "Sucre roux & cannelle"],
-          produits_laitiers: [],
-          surgeles: []
-        },
-        steps: [
-          "Trancher la Picanha en steaks épais et inciser le gras en losanges. Enrober de gros sel.",
-          "Enrober les tranches d'ananas de sucre roux et cannelle.",
-          "Poser les steaks sur le gras en premier pour le faire fondre et le rendre croustillant.",
-          "Saisir ensuite les faces 2-3 minutes sur la zone très chaude.",
-          "Griller l'ananas à côté jusqu'à ce qu'il caramélise."
-        ]
-      }
+        instructions: "Presser le tofu et le trancher. Saisir sur plancha huilée jusqu'à consistance dorée. Badigeonner de sauce teriyaki en fin de cuisson. Griller les bok choy coupés en deux."
+    }
+];
+
+let selectedMealIds = [];
+
+function init() {
+    renderCatalog();
+}
+
+function renderCatalog() {
+    const grid = document.getElementById('catalog-grid');
+    grid.innerHTML = meals.map(meal => `
+        <div class="card" onclick="toggleMeal(${meal.id})">
+            <div class="checkbox-container">
+                <input type="checkbox" id="chk-${meal.id}" ${selectedMealIds.includes(meal.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleMeal(${meal.id})">
+            </div>
+            <img src="${meal.img}" alt="${meal.title}" onerror="this.src='https://via.placeholder.com/300x180?text=Plancha+Meal'">
+            <div class="card-body">
+                <div class="card-category">${meal.category}</div>
+                <div class="card-title">${meal.title}</div>
+            </div>
+        </div>
+    `).join('');
+    updateCounter();
+}
+
+function toggleMeal(id) {
+    if (selectedMealIds.includes(id)) {
+        selectedMealIds = selectedMealIds.filter(mId => mId !== id);
+    } else {
+        if (selectedMealIds.length >= 5) {
+            alert("Vous avez déjà sélectionné 5 repas !");
+            return;
+        }
+        selectedMealIds.push(id);
+    }
+    document.getElementById(`chk-${id}`).checked = selectedMealIds.includes(id);
+    updateCounter();
+}
+
+function updateCounter() {
+    document.getElementById('selected-count').innerText = selectedMealIds.length;
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-catalog').classList.add('hidden');
+    document.getElementById('tab-menu').classList.add('hidden');
+    document.getElementById('tab-grocery').classList.add('hidden');
+
+    if (tab === 'catalog') {
+        document.getElementById('tab-catalog').classList.remove('hidden');
+        event.target.classList.add('active');
+    } else if (tab === 'menu') {
+        document.getElementById('tab-menu').classList.remove('hidden');
+        event.target.classList.add('active');
+        renderMenu();
+    } else if (tab === 'grocery') {
+        document.getElementById('tab-grocery').classList.remove('hidden');
+        event.target.classList.add('active');
+        renderGrocery();
+    }
+}
+
+function renderMenu() {
+    const grid = document.getElementById('menu-grid');
+    const selectedMeals = meals.filter(m => selectedMealIds.includes(m.id));
+
+    if (selectedMeals.length === 0) {
+        grid.innerHTML = "<p>Aucun repas sélectionné. Allez dans l'onglet 'Choisir les repas'.</p>";
+        return;
+    }
+
+    grid.innerHTML = selectedMeals.map(meal => `
+        <div class="card" onclick="openRecipe(${meal.id})">
+            <img src="${meal.img}" alt="${meal.title}">
+            <div class="card-body">
+                <div class="card-category">${meal.category}</div>
+                <div class="card-title">${meal.title}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderGrocery() {
+    const container = document.getElementById('grocery-container');
+    const selectedMeals = meals.filter(m => selectedMealIds.includes(m.id));
+
+    if (selectedMeals.length === 0) {
+        container.innerHTML = "<p>Aucun repas sélectionné.</p>";
+        return;
+    }
+
+    const categories = [
+        { key: "Fruits/Légumes", label: "🥦 Fruits & Légumes" },
+        { key: "Viandes", label: "🥩 Viandes & Poissons" },
+        { key: "NonPérissables", label: "📦 Non-Périssable (Allées)" },
+        { key: "ProduitsLaitiers", label: "🧀 Produits Laitiers" },
+        { key: "Surgelés", label: "❄️ Surgelés" }
     ];
 
-    // App State
-    let selectedRecipeIds = [];
-    let activeCategory = 'all';
+    let html = "";
 
-    // DOM Elements
-    document.getElementById('total-recipes-count').innerText = recipesData.length;
-
-    // INITIALIZATION
-    window.addEventListener('DOMContentLoaded', () => {
-      // Load saved selection from localStorage if available
-      const saved = localStorage.getItem('plancha_selected_recipes');
-      if (saved) {
-        try {
-          selectedRecipeIds = JSON.parse(saved);
-        } catch(e) { selectedRecipeIds = []; }
-      }
-      renderCatalog();
-      updateSelectedBadges();
-    });
-
-    // NAVIGATION BETWEEN TABS
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-brand-600', 'text-brand-600', 'font-bold');
-        btn.classList.add('border-transparent', 'text-slate-500', 'font-medium');
-      });
-
-      document.getElementById(`view-${tabName}`).classList.remove('hidden');
-      const activeBtn = document.getElementById(`tab-${tabName}`);
-      activeBtn.classList.remove('border-transparent', 'text-slate-500', 'font-medium');
-      activeBtn.classList.add('border-brand-600', 'text-brand-600', 'font-bold');
-
-      if (tabName === 'menu') {
-        renderWeeklyMenu();
-      } else if (tabName === 'grocery') {
-        renderGroceryList();
-      }
-    }
-
-    // CATEGORY FILTERING
-    function setCategoryFilter(cat) {
-      activeCategory = cat;
-      document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-        btn.classList.remove('bg-brand-600', 'text-white');
-        btn.classList.add('bg-slate-100', 'text-slate-700');
-      });
-      event.target.classList.remove('bg-slate-100', 'text-slate-700');
-      event.target.classList.add('bg-brand-600', 'text-white');
-      filterRecipes();
-    }
-
-    function filterRecipes() {
-      const searchTerm = document.getElementById('search-input').value.toLowerCase();
-      const filtered = recipesData.filter(recipe => {
-        const matchesCategory = activeCategory === 'all' || recipe.category === activeCategory;
-        const matchesSearch = recipe.title.toLowerCase().includes(searchTerm) || 
-                              recipe.description.toLowerCase().includes(searchTerm);
-        return matchesCategory && matchesSearch;
-      });
-      renderGrid(filtered);
-    }
-
-    // RENDER CATALOG GRID
-    function renderCatalog() {
-      filterRecipes();
-    }
-
-    function renderGrid(recipes) {
-      const grid = document.getElementById('recipes-grid');
-      grid.innerHTML = '';
-
-      if (recipes.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">Aucune recette ne correspond à votre recherche.</div>`;
-        return;
-      }
-
-      recipes.forEach(recipe => {
-        const isSelected = selectedRecipeIds.includes(recipe.id);
-        const card = document.createElement('div');
-        card.className = `bg-white rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col justify-between shadow-sm hover:shadow-md ${isSelected ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200'}`;
-
-        card.innerHTML = `
-          <div>
-            <div class="relative h-44 w-full bg-slate-100 overflow-hidden cursor-pointer group" onclick="openModal(${recipe.id})">
-              <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-              <div class="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/20 transition-all"></div>
-              <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                <i class="fa-regular fa-clock mr-1"></i>${recipe.prepTime}
-              </span>
-              ${isSelected ? `
-                <span class="absolute top-3 right-3 bg-brand-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md flex items-center">
-                  <i class="fa-solid fa-check mr-1"></i> Sélectionné
-                </span>
-              ` : ''}
-            </div>
-
-            <div class="p-4">
-              <h3 class="font-bold text-slate-900 text-base leading-snug cursor-pointer hover:text-brand-600 transition-colors" onclick="openModal(${recipe.id})">
-                ${recipe.title}
-              </h3>
-              <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                ${recipe.description}
-              </p>
-            </div>
-          </div>
-
-          <div class="p-4 pt-0 flex items-center justify-between gap-2 mt-2">
-            <button onclick="openModal(${recipe.id})" class="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors py-1.5">
-              <i class="fa-regular fa-eye mr-1"></i> Recette
-            </button>
-            <button onclick="toggleSelectRecipe(${recipe.id})" class="text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-sm ${isSelected ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-brand-600 text-white hover:bg-brand-700'}">
-              ${isSelected ? '<i class="fa-solid fa-minus mr-1"></i> Retirer' : '<i class="fa-solid fa-plus mr-1"></i> Ajouter'}
-            </button>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    // SELECTION MANAGEMENT
-    function toggleSelectRecipe(id) {
-      const index = selectedRecipeIds.indexOf(id);
-      if (index > -1) {
-        selectedRecipeIds.splice(index, 1);
-      } else {
-        if (selectedRecipeIds.length >= 5) {
-          alert("Vous avez déjà sélectionné 5 repas pour la semaine ! Vous pouvez en retirer un pour en ajouter un autre.");
-          return;
-        }
-        selectedRecipeIds.push(id);
-      }
-      saveAndSync();
-    }
-
-    function randomizeSelection() {
-      // Pick 5 distinct random recipes
-      const shuffled = [...recipesData].sort(() => 0.5 - Math.random());
-      selectedRecipeIds = shuffled.slice(0, 5).map(r => r.id);
-      saveAndSync();
-    }
-
-    function clearSelection() {
-      selectedRecipeIds = [];
-      saveAndSync();
-    }
-
-    function saveAndSync() {
-      localStorage.setItem('plancha_selected_recipes', JSON.stringify(selectedRecipeIds));
-      updateSelectedBadges();
-      renderCatalog();
-      // Also refresh modal button if modal open
-      const modal = document.getElementById('recipe-modal');
-      if (!modal.classList.contains('hidden')) {
-        const currentModalId = modal.dataset.currentRecipeId;
-        if (currentModalId) updateModalBtn(parseInt(currentModalId));
-      }
-    }
-
-    function updateSelectedBadges() {
-      const count = selectedRecipeIds.length;
-      document.getElementById('selected-count-badge').innerText = `${count} / 5`;
-      document.getElementById('menu-badge-tab').innerText = count;
-    }
-
-    // ==========================================
-    // TAB 2: WEEKLY MENU VISUAL DISPLAY
-    // ==========================================
-    function renderWeeklyMenu() {
-      const grid = document.getElementById('menu-cards-grid');
-      const emptyState = document.getElementById('menu-empty-state');
-      grid.innerHTML = '';
-
-      if (selectedRecipeIds.length === 0) {
-        emptyState.classList.remove('hidden');
-        return;
-      } else {
-        emptyState.classList.add('hidden');
-      }
-
-      const selectedRecipes = recipesData.filter(r => selectedRecipeIds.includes(r.id));
-
-      selectedRecipes.forEach((recipe, idx) => {
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between';
-        card.onclick = () => openModal(recipe.id);
-
-        card.innerHTML = `
-          <div>
-            <div class="relative h-52 w-full overflow-hidden bg-slate-100">
-              <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
-              <span class="absolute top-4 left-4 bg-brand-600 text-white font-extrabold text-xs px-3 py-1 rounded-full shadow-md">
-                Repas ${idx + 1}
-              </span>
-              <span class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-slate-800 font-bold text-xs px-2.5 py-1 rounded-full shadow-sm">
-                <i class="fa-regular fa-clock mr-1"></i>${recipe.prepTime}
-              </span>
-              <div class="absolute bottom-3 left-4 right-4 text-white">
-                <h3 class="font-extrabold text-lg leading-snug group-hover:text-amber-300 transition-colors">${recipe.title}</h3>
-              </div>
-            </div>
-            <div class="p-5">
-              <p class="text-xs text-slate-600 leading-relaxed">${recipe.description}</p>
-              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-brand-600">
-                <span>Voir la recette complète</span>
-                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-              </div>
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    // ==========================================
-    // TAB 3: GROCERY LIST GENERATOR (STORE SECTIONS)
-    // ==========================================
-    function renderGroceryList() {
-      const container = document.getElementById('grocery-sections-container');
-      const emptyState = document.getElementById('grocery-empty-state');
-      container.innerHTML = '';
-
-      if (selectedRecipeIds.length === 0) {
-        emptyState.classList.remove('hidden');
-        return;
-      } else {
-        emptyState.classList.add('hidden');
-      }
-
-      const selectedRecipes = recipesData.filter(r => selectedRecipeIds.includes(r.id));
-
-      // Aggregate ingredients strictly into requested order:
-      // 1. Fruits / Légumes
-      // 2. Viandes & Poissons
-      // 3. Non-Périssable (Allées)
-      // 4. Produits Laitiers
-      // 5. Surgelés
-      const aggregated = {
-        fruits_legumes: [],
-        viandes_poissons: [],
-        non_perissable: [],
-        produits_laitiers: [],
-        surgeles: []
-      };
-
-      selectedRecipes.forEach(r => {
-        Object.keys(aggregated).forEach(sec => {
-          if (r.ingredients[sec]) {
-            aggregated[sec].push(...r.ingredients[sec]);
-          }
-        });
-      });
-
-      // Section metadata in specified order
-      const sectionsConfig = [
-        { key: 'fruits_legumes', title: '1. Fruits & Légumes', icon: 'fa-apple-whole', color: 'emerald' },
-        { key: 'viandes_poissons', title: '2. Viandes & Poissons', icon: 'fa-drumstick-bite', color: 'rose' },
-        { key: 'non_perissable', title: '3. Non-Périssable (Allées)', icon: 'fa-box-archive', color: 'amber' },
-        { key: 'produits_laitiers', title: '4. Produits Laitiers', icon: 'fa-cheese', color: 'blue' },
-        { key: 'surgeles', title: '5. Surgelés', icon: 'fa-snowflake', color: 'cyan' }
-      ];
-
-      sectionsConfig.forEach(sec => {
-        const items = aggregated[sec.key];
-        if (items.length === 0) return; // Skip empty sections
-
-        // Unique items list
-        const uniqueItems = [...new Set(items)];
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4';
-
-        card.innerHTML = `
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center space-x-2.5">
-              <div class="w-8 h-8 rounded-xl bg-${sec.color}-100 text-${sec.color}-600 flex items-center justify-center text-sm font-bold">
-                <i class="fa-solid ${sec.icon}"></i>
-              </div>
-              <h3 class="font-bold text-slate-900 text-sm">${sec.title}</h3>
-            </div>
-            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">${uniqueItems.length} articles</span>
-          </div>
-
-          <ul class="space-y-2">
-            ${uniqueItems.map(item => `
-              <li class="flex items-start space-x-2.5 text-xs text-slate-700">
-                <input type="checkbox" onchange="this.nextElementSibling.classList.toggle('line-through'); this.nextElementSibling.classList.toggle('text-slate-400')" class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
-                <span>${item}</span>
-              </li>
-            `).join('')}
-          </ul>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function copyGroceryToClipboard() {
-      const selectedRecipes = recipesData.filter(r => selectedRecipeIds.includes(r.id));
-      if (selectedRecipes.length === 0) return;
-
-      let text = "🛒 LISTE D'ÉPICERIE PLANCHA\n\n";
-
-      const sectionsConfig = [
-        { key: 'fruits_legumes', title: '🥦 FRUITS & LÉGUMES' },
-        { key: 'viandes_poissons', title: '🥩 VIANDES & POISSONS' },
-        { key: 'non_perissable', title: '🥫 NON-PÉRISSABLE (ALLÉES)' },
-        { key: 'produits_laitiers', title: '🧀 PRODUITS LAITIERS' },
-        { key: 'surgeles', title: '❄️ SURGELÉS' }
-      ];
-
-      sectionsConfig.forEach(sec => {
+    categories.forEach(cat => {
         let items = [];
-        selectedRecipes.forEach(r => {
-          if (r.ingredients[sec.key]) items.push(...r.ingredients[sec.key]);
+        selectedMeals.forEach(meal => {
+            if (meal.ingredients[cat.key]) {
+                items = items.concat(meal.ingredients[cat.key]);
+            }
         });
-        const unique = [...new Set(items)];
-        if (unique.length > 0) {
-          text += `${sec.title}\n`;
-          unique.forEach(i => text += `  • ${i}\n`);
-          text += `\n`;
+
+        if (items.length > 0) {
+            html += `
+                <div class="grocery-section">
+                    <h3>${cat.label}</h3>
+                    <ul class="grocery-list">
+                        ${items.map(item => `<li><input type="checkbox"> ${item}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
         }
-      });
-
-      navigator.clipboard.writeText(text).then(() => {
-        alert("La liste d'épicerie a été copiée dans votre presse-papier !");
-      });
-    }
-
-    // ==========================================
-    // MODAL RECIPE DETAILS
-    // ==========================================
-    function openModal(id) {
-      const recipe = recipesData.find(r => r.id === id);
-      if (!recipe) return;
-
-      const modal = document.getElementById('recipe-modal');
-      modal.dataset.currentRecipeId = id;
-
-      document.getElementById('modal-img').src = recipe.image;
-      document.getElementById('modal-title').innerText = recipe.title;
-      document.getElementById('modal-cat-badge').innerText = recipe.category.toUpperCase();
-      document.getElementById('modal-time').innerText = recipe.prepTime;
-      document.getElementById('modal-heat').innerText = recipe.heat;
-      document.getElementById('modal-desc').innerText = recipe.description;
-
-      // Render Ingredients List
-      const ingList = document.getElementById('modal-ingredients');
-      ingList.innerHTML = '';
-      const allIngs = [
-        ...recipe.ingredients.fruits_legumes,
-        ...recipe.ingredients.viandes_poissons,
-        ...recipe.ingredients.non_perissable,
-        ...recipe.ingredients.produits_laitiers,
-        ...recipe.ingredients.surgeles
-      ];
-      allIngs.forEach(ing => {
-        const li = document.createElement('li');
-        li.className = 'flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-100';
-        li.innerHTML = `<i class="fa-solid fa-circle-check text-brand-500 text-xs shrink-0"></i><span>${ing}</span>`;
-        ingList.appendChild(li);
-      });
-
-      // Render Steps List
-      const stepsList = document.getElementById('modal-steps');
-      stepsList.innerHTML = '';
-      recipe.steps.forEach((step, idx) => {
-        const li = document.createElement('li');
-        li.className = 'flex items-start space-x-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100';
-        li.innerHTML = `
-          <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
-          <span class="leading-relaxed">${step}</span>
-        `;
-        stepsList.appendChild(li);
-      });
-
-      updateModalBtn(id);
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function updateModalBtn(id) {
-      const btn = document.getElementById('modal-toggle-select-btn');
-      const isSelected = selectedRecipeIds.includes(id);
-      if (isSelected) {
-        btn.innerHTML = `<i class="fa-solid fa-minus mr-1.5"></i> Retirer du menu`;
-        btn.className = "bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition-all";
-      } else {
-        btn.innerHTML = `<i class="fa-solid fa-plus mr-1.5"></i> Ajouter au menu de la semaine`;
-        btn.className = "bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md";
-      }
-      btn.onclick = () => {
-        toggleSelectRecipe(id);
-        updateModalBtn(id);
-      };
-    }
-
-    function closeModal() {
-      document.getElementById('recipe-modal').classList.add('hidden');
-      document.body.style.overflow = '';
-    }
-
-    // Close modal when clicking outside
-    document.getElementById('recipe-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'recipe-modal') closeModal();
     });
-  </script>
+
+    container.innerHTML = html;
+}
+
+function openRecipe(id) {
+    const meal = meals.find(m => m.id === id);
+    document.getElementById('modal-title').innerText = meal.title;
+    document.getElementById('modal-img').src = meal.img;
+    
+    let ingHtml = "";
+    Object.values(meal.ingredients).forEach(list => {
+        list.forEach(i => ingHtml += `<li>${i}</li>`);
+    });
+    
+    document.getElementById('modal-ingredients').innerHTML = ingHtml;
+    document.getElementById('modal-instructions').innerText = meal.instructions;
+    document.getElementById('recipe-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('recipe-modal').style.display = 'none';
+}
+
+init();
+</script>
 </body>
 </html>
