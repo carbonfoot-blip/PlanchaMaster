@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plancha Master - Générateur de Menu & Recettes</title>
+    <title>Plancha & Culinary Master - Générateur de Menu & Épicerie</title>
     <style>
         :root {
             --primary: #d97706;
@@ -61,9 +61,43 @@
             border-color: var(--primary);
         }
 
+        /* Filter Section */
+        .filter-box {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .filter-group label {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #64748b;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
         }
 
@@ -104,24 +138,37 @@
             margin-bottom: 8px;
         }
 
-        .card-category {
-            font-size: 0.85em;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .tags-container {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
         }
+
+        .tag {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .tag-protein { background: #fee2e2; color: #991b1b; }
+        .tag-cooking { background: #fef3c7; color: #92400e; }
+        .tag-category { background: #e0f2fe; color: #075985; }
 
         .btn-recipe-preview {
             margin-top: auto;
             background: #f1f5f9;
             color: #334155;
             border: 1px solid #cbd5e1;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85em;
             font-weight: bold;
             transition: all 0.2s;
+            width: 100%;
         }
 
         .btn-recipe-preview:hover {
@@ -133,13 +180,14 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .checkbox-container input {
@@ -216,7 +264,7 @@
         .modal-content {
             background: white;
             border-radius: 12px;
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -253,8 +301,11 @@
         }
 
         .grocery-list li {
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .counter-box {
@@ -321,6 +372,16 @@
         .status-online { background: #dcfce7; color: #15803d; }
         .status-local { background: #fee2e2; color: #b91c1c; }
 
+        .recipe-meta-bar {
+            display: flex;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -328,8 +389,8 @@
 
 <div class="container">
     <header>
-        <h1>🔥 Plancha Master</h1>
-        <p>Générez votre menu de 5 repas et votre liste d'épicerie sur mesure</p>
+        <h1>🔥 Plancha & Culinary Master</h1>
+        <p>Inspiré d'HelloFresh - Générateur de Menu & Liste d'Épicerie avec Quantités</p>
         <div id="backend-badge" class="backend-status status-online">🌐 Mode : BD Partagée en Ligne</div>
     </header>
 
@@ -349,39 +410,102 @@
         </div>
     </div>
 
-    <!-- Catalogue -->
+    <!-- Catalogue avec Filtres -->
     <div id="tab-catalog">
+        <div class="filter-box">
+            <div class="filter-group">
+                <label>🥩 Filtrer par Protéine :</label>
+                <select id="filter-protein" onchange="applyFilters()">
+                    <option value="">Toutes les protéines</option>
+                    <option value="Poulet">Poulet & Volaille</option>
+                    <option value="Bœuf">Bœuf</option>
+                    <option value="Porc">Porc</option>
+                    <option value="Poisson">Poisson & Fruits de mer</option>
+                    <option value="Végétarien">Végétarien / Tofu / Halloumi</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>🔥 Mode de Cuisson :</label>
+                <select id="filter-cooking" onchange="applyFilters()">
+                    <option value="">Tous les modes</option>
+                    <option value="Plancha">Plancha</option>
+                    <option value="Poêle & Four">Poêle & Four</option>
+                    <option value="Mijoteuse / Instant Pot">Mijoteuse / Instant Pot</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>🏷️ Catégorie / Style :</label>
+                <select id="filter-category" onchange="applyFilters()">
+                    <option value="">Toutes les catégories</option>
+                    <option value="Tacos & Mexicain">Tacos & Mexicain</option>
+                    <option value="Burgers & Sandwichs">Burgers & Sandwichs</option>
+                    <option value="Steaks & Grills">Steaks & Grills</option>
+                    <option value="Poissons & Fruits de mer">Poissons & Fruits de mer</option>
+                    <option value="Asiatique & Teppanyaki">Asiatique & Teppanyaki</option>
+                    <option value="Italien & Pâtes">Italien & Pâtes</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>🔍 Recherche par mot-clé :</label>
+                <input type="text" id="filter-search" placeholder="Ex: Tacos, Teriyaki, Chimichurri..." oninput="applyFilters()">
+            </div>
+        </div>
+
         <div id="catalog-grid" class="grid"></div>
     </div>
 
     <!-- Menu -->
     <div id="tab-menu" class="hidden">
         <h2>Votre Menu Hebdomadaire</h2>
-        <p><em>Cliquez sur la carte ou sur l'image d'un plat pour ouvrir la fiche recette.</em></p>
+        <p><em>Cliquez sur la carte ou sur l'image d'un plat pour ouvrir la fiche recette complète style HelloFresh.</em></p>
         <div id="menu-grid" class="grid"></div>
     </div>
 
     <!-- Épicerie -->
     <div id="tab-grocery" class="hidden">
-        <h2>Votre Liste d'Épicerie Organisée</h2>
+        <h2>Votre Liste d'Épicerie Organisée avec Quantités</h2>
         <div id="grocery-container"></div>
     </div>
 
     <!-- Formulaire d'ajout -->
     <div id="tab-add" class="hidden">
         <div class="form-container">
-            <h2>Ajouter une nouvelle recette Plancha</h2>
-            <p>Saisissez le lien Web de la recette ou remplissez le formulaire pour l'intégrer au catalogue partagé.</p>
+            <h2>Ajouter une nouvelle recette (Style HelloFresh)</h2>
+            <p>Saisissez le lien Web de la recette ou remplissez le formulaire ci-dessous avec les quantités précises par ingrédient.</p>
             
             <form id="add-recipe-form" onsubmit="saveNewRecipe(event)">
                 <div class="form-group">
-                    <label>Lien Web de la recette (facultatif) :</label>
-                    <input type="url" id="input-url" placeholder="https://exemple.com/recette-tacos" onblur="autoFetchRecipeInfo(this.value)">
+                    <label>Lien Web de la recette (ex: HelloFresh) :</label>
+                    <input type="url" id="input-url" placeholder="https://www.hellofresh.ca/recipes/..." onblur="autoFetchRecipeInfo(this.value)">
                 </div>
 
                 <div class="form-group">
                     <label>Titre de la recette :</label>
-                    <input type="text" id="input-title" required placeholder="Ex: Tacos au Poulet Chipotle">
+                    <input type="text" id="input-title" required placeholder="Ex: Poulet Toscano au Pesto et Tomates Séchées">
+                </div>
+
+                <div class="form-group">
+                    <label>Protéine Principale :</label>
+                    <select id="input-protein">
+                        <option>Poulet</option>
+                        <option>Bœuf</option>
+                        <option>Porc</option>
+                        <option>Poisson</option>
+                        <option>Végétarien</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Mode de Cuisson :</label>
+                    <select id="input-cooking">
+                        <option>Plancha</option>
+                        <option>Poêle & Four</option>
+                        <option>Mijoteuse / Instant Pot</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -391,8 +515,9 @@
                         <option>Burgers & Sandwichs</option>
                         <option>Steaks & Grills</option>
                         <option>Poissons & Fruits de mer</option>
-                        <option>Végétarien</option>
                         <option>Asiatique & Teppanyaki</option>
+                        <option>Italien & Pâtes</option>
+                        <option>Végétarien</option>
                         <option>Autre</option>
                     </select>
                 </div>
@@ -403,7 +528,7 @@
                 </div>
 
                 <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
-                <p><strong>Ingrédients par rayon d'épicerie :</strong> (Séparez les ingrédients par des virgules)</p>
+                <p><strong>Ingrédients avec Quantités par rayon :</strong> (Séparez chaque item par une virgule, ex: <em>600g poitrine de poulet, 2 c. à soupe d'huile d'olive</em>)</p>
 
                 <div class="form-group">
                     <label>🥦 Fruits & Légumes :</label>
@@ -417,25 +542,25 @@
 
                 <div class="form-group">
                     <label>📦 Non-Périssable (Allées) :</label>
-                    <input type="text" id="ing-pantry" placeholder="Ex: 12 tortillas de maïs, huile d'olive, épices">
+                    <input type="text" id="ing-pantry" placeholder="Ex: 12 tortillas de maïs, 2 c. à soupe d'huile d'olive, 1 c. à thé d'épices cajun">
                 </div>
 
                 <div class="form-group">
                     <label>🧀 Produits Laitiers :</label>
-                    <input type="text" id="ing-dairy" placeholder="Ex: Crème sure, Fromage râpé">
+                    <input type="text" id="ing-dairy" placeholder="Ex: 100g crème sure, 150g fromage cheddar râpé">
                 </div>
 
                 <div class="form-group">
                     <label>❄️ Surgelés :</label>
-                    <input type="text" id="ing-frozen" placeholder="Ex: Maïs en grains">
+                    <input type="text" id="ing-frozen" placeholder="Ex: 200g maïs en grains">
                 </div>
 
                 <div class="form-group">
-                    <label>Instructions de cuisson Plancha :</label>
-                    <textarea id="input-instructions" rows="4" required placeholder="Étapes de préparation et temps de cuisson sur la plancha..."></textarea>
+                    <label>Instructions de préparation et cuisson complètes :</label>
+                    <textarea id="input-instructions" rows="5" required placeholder="Étapes détaillées de préparation et temps de cuisson..."></textarea>
                 </div>
 
-                <button type="submit" class="btn-submit">💾 Enregistrer la recette</button>
+                <button type="submit" class="btn-submit">💾 Enregistrer la recette dans la base</button>
             </form>
         </div>
     </div>
@@ -446,8 +571,14 @@
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal()">&times;</button>
         <h2 id="modal-title"></h2>
-        <img id="modal-img" style="width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:10px;" src="" alt="">
+        <img id="modal-img" style="width:100%; height:220px; object-fit:cover; border-radius:8px; margin-bottom:10px;" src="" alt="">
         
+        <div class="recipe-meta-bar">
+            <div>🍗 <strong>Protéine :</strong> <span id="modal-protein"></span></div>
+            <div>🔥 <strong>Cuisson :</strong> <span id="modal-cooking"></span></div>
+            <div>🏷️ <strong>Style :</strong> <span id="modal-category"></span></div>
+        </div>
+
         <!-- Modification d'image -->
         <div class="image-edit-box">
             <input type="url" id="edit-img-url" placeholder="Nouvelle URL de l'image (https://...)">
@@ -455,10 +586,12 @@
         </div>
 
         <p id="modal-link-container"></p>
-        <h3>Ingrédients</h3>
-        <ul id="modal-ingredients"></ul>
-        <h3>Instructions sur Plancha</h3>
-        <p id="modal-instructions"></p>
+        
+        <h3>🛒 Ingrédients & Quantités Détaillées</h3>
+        <ul id="modal-ingredients" style="line-height:1.6;"></ul>
+
+        <h3>🍳 Instructions de Préparation & Cuisson</h3>
+        <p id="modal-instructions" style="white-space: pre-line; line-height: 1.6;"></p>
     </div>
 </div>
 
@@ -526,18 +659,46 @@ function init() {
     loadDatabase();
 }
 
+function applyFilters() {
+    renderCatalog();
+}
+
 function renderCatalog() {
     const grid = document.getElementById('catalog-grid');
-    grid.innerHTML = meals.map(meal => `
+    
+    const filterProtein = document.getElementById('filter-protein').value;
+    const filterCooking = document.getElementById('filter-cooking').value;
+    const filterCategory = document.getElementById('filter-category').value;
+    const filterSearch = document.getElementById('filter-search').value.toLowerCase().trim();
+
+    const filteredMeals = meals.filter(meal => {
+        if (filterProtein && meal.protein !== filterProtein) return false;
+        if (filterCooking && meal.cookingMode !== filterCooking) return false;
+        if (filterCategory && meal.category !== filterCategory) return false;
+        if (filterSearch && !meal.title.toLowerCase().includes(filterSearch)) return false;
+        return true;
+    });
+
+    if (filteredMeals.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; padding: 20px;">Aucune recette ne correspond aux filtres sélectionnés.</p>`;
+        updateCounter();
+        return;
+    }
+
+    grid.innerHTML = filteredMeals.map(meal => `
         <div class="card" onclick="toggleMeal(${meal.id})">
             <div class="checkbox-container">
                 <input type="checkbox" id="chk-${meal.id}" ${selectedMealIds.includes(meal.id) ? 'checked' : ''} onclick="event.stopPropagation(); toggleMeal(${meal.id})">
             </div>
             <img src="${meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'}" alt="${meal.title}" onerror="this.src='https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'">
             <div class="card-body">
-                <div class="card-category">${meal.category}</div>
+                <div class="tags-container">
+                    <span class="tag tag-protein">${meal.protein || 'Général'}</span>
+                    <span class="tag tag-cooking">${meal.cookingMode || 'Plancha'}</span>
+                    <span class="tag tag-category">${meal.category}</span>
+                </div>
                 <div class="card-title">${meal.title}</div>
-                <button class="btn-recipe-preview" onclick="event.stopPropagation(); openRecipe(${meal.id})">📖 Voir la recette & ingrédients</button>
+                <button class="btn-recipe-preview" onclick="event.stopPropagation(); openRecipe(${meal.id})">📖 Fiche Recette & Ingrédients</button>
             </div>
         </div>
     `).join('');
@@ -601,7 +762,10 @@ function renderMenu() {
         <div class="card" onclick="openRecipe(${meal.id})">
             <img src="${meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'}" alt="${meal.title}">
             <div class="card-body">
-                <div class="card-category">${meal.category}</div>
+                <div class="tags-container">
+                    <span class="tag tag-protein">${meal.protein || 'Général'}</span>
+                    <span class="tag tag-cooking">${meal.cookingMode || 'Plancha'}</span>
+                </div>
                 <div class="card-title">${meal.title}</div>
             </div>
         </div>
@@ -640,7 +804,7 @@ function renderGrocery() {
                 <div class="grocery-section">
                     <h3>${cat.label}</h3>
                     <ul class="grocery-list">
-                        ${items.map(item => `<li><input type="checkbox"> ${item}</li>`).join('')}
+                        ${items.map(item => `<li><input type="checkbox"> <span>${item}</span></li>`).join('')}
                     </ul>
                 </div>
             `;
@@ -655,10 +819,31 @@ function parseIngredientsInput(inputStr) {
     return inputStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
 }
 
+function autoFetchRecipeInfo(url) {
+    if (!url) return;
+    try {
+        const urlObj = new URL(url);
+        const pathSegments = urlObj.pathname.split('/').filter(p => p.length > 0);
+        if (pathSegments.length > 0) {
+            let rawTitle = pathSegments[pathSegments.length - 1]
+                .replace(/-/g, ' ')
+                .replace(/\.html?$/, '');
+            let formattedTitle = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
+            if (!document.getElementById('input-title').value) {
+                document.getElementById('input-title').value = formattedTitle;
+            }
+        }
+    } catch (e) {
+        // URL non valide
+    }
+}
+
 function saveNewRecipe(e) {
     e.preventDefault();
 
     const title = document.getElementById('input-title').value;
+    const protein = document.getElementById('input-protein').value;
+    const cookingMode = document.getElementById('input-cooking').value;
     const category = document.getElementById('input-category').value;
     const img = document.getElementById('input-img').value || "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80";
     const url = document.getElementById('input-url').value;
@@ -667,6 +852,8 @@ function saveNewRecipe(e) {
     const newMeal = {
         id: Date.now(),
         title: title,
+        protein: protein,
+        cookingMode: cookingMode,
         category: category,
         img: img,
         sourceUrl: url,
@@ -684,7 +871,7 @@ function saveNewRecipe(e) {
     saveDatabase();
 
     document.getElementById('add-recipe-form').reset();
-    alert("Recette ajoutée avec succès !");
+    alert("Recette enregistrée avec succès !");
     switchTab('catalog');
 }
 
@@ -697,9 +884,13 @@ function openRecipe(id) {
     document.getElementById('modal-img').src = meal.img || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80';
     document.getElementById('edit-img-url').value = meal.img || '';
 
+    document.getElementById('modal-protein').innerText = meal.protein || 'Non spécifié';
+    document.getElementById('modal-cooking').innerText = meal.cookingMode || 'Non spécifié';
+    document.getElementById('modal-category').innerText = meal.category || 'Général';
+
     const linkContainer = document.getElementById('modal-link-container');
     if (meal.sourceUrl) {
-        linkContainer.innerHTML = `<a href="${meal.sourceUrl}" target="_blank" style="color:var(--primary);">🔗 Voir la recette originale sur le Web</a>`;
+        linkContainer.innerHTML = `<a href="${meal.sourceUrl}" target="_blank" style="color:var(--primary); font-weight:bold;">🔗 Voir la fiche recette originale sur HelloFresh / Web</a>`;
     } else {
         linkContainer.innerHTML = "";
     }
@@ -708,7 +899,7 @@ function openRecipe(id) {
     if (meal.ingredients) {
         Object.entries(meal.ingredients).forEach(([cat, list]) => {
             if (list && list.length > 0) {
-                ingHtml += `<li><strong>${cat}:</strong> ${list.join(', ')}</li>`;
+                ingHtml += `<li style="margin-bottom:6px;"><strong>${cat} :</strong> ${list.join(' • ')}</li>`;
             }
         });
     }
